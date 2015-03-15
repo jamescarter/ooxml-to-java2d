@@ -13,6 +13,7 @@ import documentconverter.renderer.MockRenderer;
 
 public class DocxReaderTest {
 	private static final File TEST_FILE_LAYOUTS = new File("src/test/resources/reader/docx/layouts.docx");
+	private static final File TEST_FILE_BODY_START_NO_HEADER = new File("src/test/resources/reader/docx/body_start_no_header.docx");
 	private MockRenderer renderer;
 
 	@Before
@@ -40,5 +41,15 @@ public class DocxReaderTest {
 
 		assertEquals(15840, page3.getPageWidth());
 		assertEquals(12240, page3.getPageHeight());
+	}
+
+	@Test
+	public void testBodyStartNoHeader() throws ReaderException {
+		new DocxReader(renderer, TEST_FILE_BODY_START_NO_HEADER).process();
+
+		List<MockPage> pages = renderer.getPages();
+
+		assertEquals("text: Hello, World!, x: 1440, y: 1440", pages.get(0).getActions().get(0));
+		assertEquals("text: Hello, World!, x: 1701, y: 1134", pages.get(1).getActions().get(0));
 	}
 }

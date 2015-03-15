@@ -7,9 +7,11 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.docx4j.jaxb.XPathBinderAssociationIsPartialException;
+import org.docx4j.model.structure.SectionWrapper;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
+import org.docx4j.wml.SectPr.PgMar;
 import org.docx4j.wml.SectPr.PgSz;
 import org.docx4j.wml.*;
 
@@ -26,6 +28,8 @@ public class DocxReader implements Reader {
 	private Deque<PageLayout> layouts = new ArrayDeque<>();
 	private PageLayout layout;
 	private Page page;
+	private int xOffset;
+	private int yOffset;
 
 	public DocxReader(Renderer renderer, File docx) {
 		this.renderer = renderer;
@@ -44,33 +48,29 @@ public class DocxReader implements Reader {
 
 		MainDocumentPart main = word.getMainDocumentPart();
 
-		setPageLayouts(main);
+		setPageLayouts(word);
 		createPageFromNextLayout();
 		iterateContentParts(main);
 	}
 
-	private void setPageLayouts(MainDocumentPart main) throws ReaderException {
-		List<Object> sections;
-
-		try {
-			// Page settings are stored in the last paragraph of each page
-			// Retrieve all the sections and create the pages
-			sections = main.getJAXBNodesViaXPath("//w:sectPr", false);
-		} catch (XPathBinderAssociationIsPartialException | JAXBException e) {
-			throw new ReaderException("Error retrieving sections", e);
-		}
-
-		for (Object obj : sections) {
-			SectPr sectPr = (SectPr) obj;
-
-			layouts.add(createPageLayout(sectPr));
+	private void setPageLayouts(WordprocessingMLPackage word) {
+		for (SectionWrapper section : word.getDocumentModel().getSections()) {
+			layouts.add(createPageLayout(section.getSectPr()));
 		}
 	}
 
 	private PageLayout createPageLayout(SectPr sectPr) {
 		PgSz size = sectPr.getPgSz();
+		PgMar margin = sectPr.getPgMar();
 
-		return new PageLayout(size.getW().intValue(), size.getH().intValue());
+		return new PageLayout(
+			size.getW().intValue(),
+			size.getH().intValue(),
+			margin.getTop().intValue(),
+			margin.getRight().intValue(),
+			margin.getBottom().intValue(),
+			margin.getLeft().intValue()
+		);
 	}
 
 	private void createPageFromNextLayout() {
@@ -80,6 +80,8 @@ public class DocxReader implements Reader {
 
 	private void createPageFromLayout() {
 		page = renderer.addPage(layout.getWidth(), layout.getHeight());
+		xOffset = layout.getTopMargin();
+		yOffset = layout.getLeftMargin();
 	}
 
 	public void iterateContentParts(ContentAccessor ca) {
@@ -118,6 +120,6 @@ public class DocxReader implements Reader {
 	}
 
 	private void processText(Text value) {
-		page.drawString(value.getValue(), 10, 100);
+		page.drawString(value.getValue(), xOffset, yOffset);
 	}
 }
