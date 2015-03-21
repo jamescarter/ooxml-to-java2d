@@ -1,14 +1,13 @@
 package documentconverter.renderer;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class MockPage implements Page {
-	private List<String> actions = new ArrayList<>();
+	private List<Object> actions = new ArrayList<>();
 	private int pageWidth;
 	private int pageHeight;
-	private FontConfig fontConfig;
 
 	public MockPage(int pageWidth, int pageHeight) {
 		this.pageWidth = pageWidth;
@@ -17,12 +16,12 @@ public class MockPage implements Page {
 
 	@Override
 	public void setFontConfig(FontConfig fontConfig) {
-		this.fontConfig = fontConfig;
+		actions.add(new FontConfigAction(fontConfig.getName(), fontConfig.getSize()));
 	}
 
 	@Override
 	public void drawString(String text, int x, int y) {
-		actions.add("text: "+ text + ", x: " + x + ", y: " + y);
+		actions.add(new DrawStringAction(text, x, y));
 	}
 
 	public int getPageWidth() {
@@ -33,11 +32,11 @@ public class MockPage implements Page {
 		return pageHeight;
 	}
 
-	public FontConfig getFontConfig() {
-		return fontConfig;
+	public String getAction(int index) {
+		return actions.get(index).toString();
 	}
 
-	public List<String> getActions() {
-		return Collections.unmodifiableList(actions);
+	public <T> List<T> getActions(Class<T> clazz) {
+		return (List<T>) actions.stream().filter(o -> clazz.isInstance(o)).collect(Collectors.toList());
 	}
 }

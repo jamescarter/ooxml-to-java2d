@@ -5,6 +5,7 @@ import java.awt.font.FontRenderContext;
 
 public class FontConfig {
 	private Font font = new Font(Font.SERIF, Font.PLAIN, 12);
+	private String name = font.getName();
 	private float size;
 
 	public FontConfig() {
@@ -12,9 +13,10 @@ public class FontConfig {
 		setSize(font.getSize());
 	}
 
-	public void setFontName(String name) {
+	public void setName(String name) {
 		if (!font.getName().equals(name)) {
-			font = new Font(name, font.getStyle(), font.getSize());
+			this.name = name;
+			this.font = new Font(name, font.getStyle(), font.getSize());
 			setSize(size);
 		}
 	}
@@ -22,6 +24,10 @@ public class FontConfig {
 	public void setSize(float sizePt) {
 		size = sizePt * 20 * 96 / 72;
 		font = font.deriveFont(size);
+	}
+
+	public String getName() {
+		return name;
 	}
 
 	public float getSize() {

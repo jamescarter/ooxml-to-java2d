@@ -138,7 +138,7 @@ public class DocxReader implements Reader {
 
 	private void setStyle(RPr runProperties) {
 		if (runProperties.getRFonts() != null) {
-			font.setFontName(runProperties.getRFonts().getAscii());
+			font.setName(runProperties.getRFonts().getAscii());
 		}
 
 		if (runProperties.getSz() != null) {
