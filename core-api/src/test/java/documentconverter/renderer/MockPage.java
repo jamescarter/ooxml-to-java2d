@@ -8,10 +8,16 @@ public class MockPage implements Page {
 	private List<String> actions = new ArrayList<>();
 	private int pageWidth;
 	private int pageHeight;
+	private FontConfig fontConfig;
 
 	public MockPage(int pageWidth, int pageHeight) {
 		this.pageWidth = pageWidth;
 		this.pageHeight = pageHeight;
+	}
+
+	@Override
+	public void setFontConfig(FontConfig fontConfig) {
+		this.fontConfig = fontConfig;
 	}
 
 	@Override
@@ -25,6 +31,10 @@ public class MockPage implements Page {
 
 	public int getPageHeight() {
 		return pageHeight;
+	}
+
+	public FontConfig getFontConfig() {
+		return fontConfig;
 	}
 
 	public List<String> getActions() {

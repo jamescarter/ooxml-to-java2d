@@ -14,6 +14,7 @@ import documentconverter.renderer.MockRenderer;
 public class DocxReaderTest {
 	private static final File TEST_FILE_LAYOUTS = new File("src/test/resources/reader/docx/layouts.docx");
 	private static final File TEST_FILE_BODY_START_NO_HEADER = new File("src/test/resources/reader/docx/body_start_no_header.docx");
+	private static final File TEST_FONT_SIZE = new File("src/test/resources/reader/docx/font_size.docx");
 	private MockRenderer renderer;
 
 	@Before
@@ -51,5 +52,23 @@ public class DocxReaderTest {
 
 		assertEquals("text: Hello, World!, x: 1440, y: 1440", pages.get(0).getActions().get(0));
 		assertEquals("text: Hello, World!, x: 1701, y: 1134", pages.get(1).getActions().get(0));
+	}
+
+	@Test
+	public void testFontSize() throws ReaderException {
+		new DocxReader(renderer, TEST_FONT_SIZE).process();
+
+		List<String> actions = renderer.getPages().get(0).getActions();
+
+		assertEquals("text: The, x: 1440, y: 1440", actions.get(0));
+		assertEquals("text: quick, x: 2079, y: 1440", actions.get(2));
+		assertEquals("text: brown, x: 3052, y: 1440", actions.get(4));
+		assertEquals("text: fox, x: 4332, y: 1440", actions.get(6));
+		assertEquals("text: jumps, x: 5105, y: 1440", actions.get(8));
+		assertEquals("text: over, x: 6674, y: 1440", actions.get(10));
+		assertEquals("text: the, x: 7978, y: 1440", actions.get(12));
+		assertEquals("text: lazy, x: 9044, y: 1440", actions.get(14));
+		assertEquals("text: dog, x: 10468, y: 1440", actions.get(16));
+		assertEquals("text: ., x: 11714, y: 1440", actions.get(17));
 	}
 }
