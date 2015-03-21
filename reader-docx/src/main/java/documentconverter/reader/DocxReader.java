@@ -1,8 +1,11 @@
 package documentconverter.reader;
 
+import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.docx4j.model.structure.SectionWrapper;
@@ -10,6 +13,7 @@ import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
 import org.docx4j.wml.PPrBase.PStyle;
+import org.docx4j.wml.PPrBase.Spacing;
 import org.docx4j.wml.SectPr.PgMar;
 import org.docx4j.wml.SectPr.PgSz;
 import org.docx4j.wml.*;
@@ -30,7 +34,23 @@ public class DocxReader implements Reader {
 	private Page page;
 	private int xOffset;
 	private int yOffset;
-	private FontConfig font = new FontConfig();
+	private FontConfig fontConfig = new FontConfig();
+	private int lineSpacing;
+	private int lineSpacingAfter;
+	private int lineSpacingBefore;
+
+
+	/**
+	 * The actions that represent the current line. These are stored until the
+	 * line height can be calculated.
+	 */
+	private List<Object> actions = new ArrayList<>();
+
+	/**
+	 * The current maximum height for the current line being processed.
+	 * This is effectively the height of the objects stored in the actions list.
+	 */
+	private double lineHeight;
 
 	public DocxReader(Renderer renderer, File docx) {
 		this.renderer = renderer;
@@ -81,8 +101,8 @@ public class DocxReader implements Reader {
 
 	private void createPageFromLayout() {
 		page = renderer.addPage(layout.getWidth(), layout.getHeight());
-		xOffset = layout.getTopMargin();
-		yOffset = layout.getLeftMargin();
+		xOffset = layout.getLeftMargin();
+		yOffset = layout.getTopMargin();
 	}
 
 	public void iterateContentParts(ContentAccessor ca) {
@@ -112,15 +132,16 @@ public class DocxReader implements Reader {
 		if (pstyle != null) {
 			Style style = main.getStyleDefinitionsPart().getStyleById(pstyle.getVal());
 
-			setStyle(style.getRPr());
+			setStyle(style);
 		}
 
 		iterateContentParts(p);
+		renderActionsForLine();
 
 		if (properties.getSectPr() != null) {
 			// The presence of SectPr indicates the next part should be started on a new page with a different layout
 			createPageFromNextLayout();
-		}		
+		}
 	}
 
 	private void processTextRun(R r) {
@@ -132,18 +153,63 @@ public class DocxReader implements Reader {
 	}
 
 	private void processText(Text text) {
-		page.drawString(text.getValue(), xOffset, yOffset);
-		xOffset += font.getWidth(text.getValue());
+		actions.add(new DrawStringAction(text.getValue(), xOffset));
+		Rectangle2D bounds = fontConfig.getStringBoxSize(text.getValue());
+		xOffset += bounds.getWidth();
+		lineHeight = Math.max(lineHeight, bounds.getHeight());
+	}
+
+	private void setStyle(Style style) {
+		if (style.getPPr() != null) {
+			Spacing spacing = style.getPPr().getSpacing();
+
+			if (spacing != null) {
+				lineSpacing = spacing.getLine().intValue();
+				lineSpacingAfter = spacing.getAfter().intValue();
+				lineSpacingBefore = spacing.getBefore().intValue();
+			}
+		}
+
+		setStyle(style.getRPr());
 	}
 
 	private void setStyle(RPr runProperties) {
+		boolean fontConfigChanged = false;
+
 		if (runProperties.getRFonts() != null) {
-			font.setName(runProperties.getRFonts().getAscii());
+			fontConfig.setName(runProperties.getRFonts().getAscii());
+			fontConfigChanged = true;
 		}
 
 		if (runProperties.getSz() != null) {
-			font.setSize(runProperties.getSz().getVal().intValue() / 2);
-			page.setFontConfig(font);
+			float sizePt = runProperties.getSz().getVal().floatValue() / 2;
+
+			// Use 92 dpi instead of the default 72 dpi (and scale by a factor of 20 for trips units)
+			fontConfig.setSize(sizePt * 20 * 96 / 72);
+			fontConfigChanged = true;
 		}
+
+		if (fontConfigChanged) {
+			actions.add(new FontConfigAction(fontConfig.getName(), fontConfig.getSize()));
+		}
+	}
+
+	private void renderActionsForLine() {
+		xOffset = layout.getLeftMargin();
+		yOffset += lineHeight + lineSpacing + lineSpacingBefore;
+
+		for (Object obj : actions) {
+			if (obj instanceof DrawStringAction) {
+				DrawStringAction ds = (DrawStringAction) obj;
+				page.drawString(ds.getText(), ds.getX(), yOffset);
+			} else if (obj instanceof FontConfigAction) {
+				FontConfigAction fc = (FontConfigAction) obj;
+				page.setFontConfig(new FontConfig(fc.getName(), fc.getSize()));
+			}
+		}
+
+		yOffset += lineSpacingAfter;
+		lineHeight = 0;
+		actions.clear();
 	}
 }

@@ -16,6 +16,7 @@ public class DocxReaderTest {
 	private static final File TEST_FILE_LAYOUTS = new File("src/test/resources/reader/docx/layouts.docx");
 	private static final File TEST_FILE_BODY_START_NO_HEADER = new File("src/test/resources/reader/docx/body_start_no_header.docx");
 	private static final File TEST_FONT_SIZE = new File("src/test/resources/reader/docx/font_size.docx");
+	private static final File TEST_LINE_HEIGHT = new File("src/test/resources/reader/docx/line_height.docx");
 	private MockRenderer renderer;
 
 	@Before
@@ -54,8 +55,8 @@ public class DocxReaderTest {
 		DrawStringAction page1Action = pages.get(0).getActions(DrawStringAction.class).get(0);
 		DrawStringAction page2Action = pages.get(1).getActions(DrawStringAction.class).get(0);
 
-		assertEquals("DrawStringAction[text=Hello, World!,x=1440,y=1440]", page1Action.toString());
-		assertEquals("DrawStringAction[text=Hello, World!,x=1701,y=1134]", page2Action.toString());
+		assertEquals("DrawStringAction[text=Hello, World!,x=1440,y=2073]", page1Action.toString());
+		assertEquals("DrawStringAction[text=Hello, World!,x=1134,y=2334]", page2Action.toString());
 	}
 
 	@Test
@@ -85,5 +86,23 @@ public class DocxReaderTest {
 		assertEquals(9044, actions.get(14).getX());
 		assertEquals(10468, actions.get(16).getX());
 		assertEquals(11714, actions.get(17).getX());
+	}
+
+	@Test
+	public void testLineHeight() throws ReaderException {
+		new DocxReader(renderer, TEST_LINE_HEIGHT).process();
+
+		List<DrawStringAction> actions = renderer.getPages().get(0).getActions(DrawStringAction.class);
+
+		assertEquals("This is the first paragraph.", actions.get(0).getText());
+		assertEquals("This is the second paragraph.", actions.get(1).getText());
+		assertEquals("This is the third paragraph.", actions.get(2).getText());
+		assertEquals("This is the fourth paragraph.", actions.get(3).getText());
+
+		// TODO: Line spacing between paragraphs is currently overly generous and needs fixing
+		assertEquals(2451, actions.get(0).getY());
+		assertEquals(3294, actions.get(1).getY());
+		assertEquals(4382, actions.get(2).getY());
+		assertEquals(5716, actions.get(3).getY());
 	}
 }

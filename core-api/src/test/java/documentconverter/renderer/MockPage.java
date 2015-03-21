@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import documentconverter.reader.FontConfigAction;
+
 public class MockPage implements Page {
 	private List<Object> actions = new ArrayList<>();
 	private int pageWidth;

@@ -2,15 +2,20 @@ package documentconverter.renderer;
 
 import java.awt.Font;
 import java.awt.font.FontRenderContext;
+import java.awt.geom.Rectangle2D;
 
 public class FontConfig {
-	private Font font = new Font(Font.SERIF, Font.PLAIN, 12);
+	private Font font = new Font(Font.SERIF, Font.PLAIN, 1);
 	private String name = font.getName();
 	private float size;
 
 	public FontConfig() {
-		// Set font size in points to force resize
-		setSize(font.getSize());
+
+	}
+
+	public FontConfig(String name, float size) {
+		setName(name);
+		setSize(size);
 	}
 
 	public void setName(String name) {
@@ -21,9 +26,9 @@ public class FontConfig {
 		}
 	}
 
-	public void setSize(float sizePt) {
-		size = sizePt * 20 * 96 / 72;
-		font = font.deriveFont(size);
+	public void setSize(float size) {
+		this.size = size;
+		this.font = font.deriveFont(size);
 	}
 
 	public String getName() {
@@ -34,8 +39,8 @@ public class FontConfig {
 		return size;
 	}
 
-	public double getWidth(String text) {
-		return font.getStringBounds(text, new FontRenderContext(font.getTransform(), true, true)).getWidth();
+	public Rectangle2D getStringBoxSize(String text) {
+		return font.getStringBounds(text, new FontRenderContext(font.getTransform(), true, true));
 	}
 
 	public Font getFont() {
