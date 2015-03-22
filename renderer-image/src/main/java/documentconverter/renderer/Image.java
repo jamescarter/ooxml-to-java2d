@@ -17,7 +17,7 @@ public class Image implements Page {
 		g = (Graphics2D) bi.getGraphics();
 
 		g.setColor(Color.WHITE);
-		g.fillRect(0, 0, (int) (pageWidth * scale), (int) (pageHeight * scale));
+		g.fillRect(0, 0, bi.getWidth(), bi.getHeight());
 		g.setColor(Color.BLACK);
 
 		g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);

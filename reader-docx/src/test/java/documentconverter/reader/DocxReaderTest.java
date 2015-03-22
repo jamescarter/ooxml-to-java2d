@@ -36,14 +36,14 @@ public class DocxReaderTest {
 		MockPage page2 = pages.get(1);
 		MockPage page3 = pages.get(2);
 
-		assertEquals(12240, page1.getPageWidth());
-		assertEquals(15840, page1.getPageHeight());
+		assertEquals(16320, page1.getPageWidth());
+		assertEquals(21120, page1.getPageHeight());
 
-		assertEquals(12983, page2.getPageWidth());
-		assertEquals(6463, page2.getPageHeight());
+		assertEquals(17310, page2.getPageWidth());
+		assertEquals(8617, page2.getPageHeight());
 
-		assertEquals(15840, page3.getPageWidth());
-		assertEquals(12240, page3.getPageHeight());
+		assertEquals(21120, page3.getPageWidth());
+		assertEquals(16320, page3.getPageHeight());
 	}
 
 	@Test
@@ -55,8 +55,8 @@ public class DocxReaderTest {
 		DrawStringAction page1Action = pages.get(0).getActions(DrawStringAction.class).get(0);
 		DrawStringAction page2Action = pages.get(1).getActions(DrawStringAction.class).get(0);
 
-		assertEquals("DrawStringAction[text=Hello, World!,x=1440,y=2073]", page1Action.toString());
-		assertEquals("DrawStringAction[text=Hello, World!,x=1134,y=2334]", page2Action.toString());
+		assertEquals("DrawStringAction[text=Hello, World!,x=1920,y=2277]", page1Action.toString());
+		assertEquals("DrawStringAction[text=Hello, World!,x=1512,y=2625]", page2Action.toString());
 	}
 
 	@Test
@@ -76,16 +76,18 @@ public class DocxReaderTest {
 		assertEquals("dog", actions.get(16).getText());
 		assertEquals(".", actions.get(17).getText());
 
-		assertEquals(1440, actions.get(0).getX());
-		assertEquals(2079, actions.get(2).getX());
-		assertEquals(3052, actions.get(4).getX());
-		assertEquals(4332, actions.get(6).getX());
-		assertEquals(5105, actions.get(8).getX());
-		assertEquals(6674, actions.get(10).getX());
-		assertEquals(7978, actions.get(12).getX());
-		assertEquals(9044, actions.get(14).getX());
-		assertEquals(10468, actions.get(16).getX());
-		assertEquals(11714, actions.get(17).getX());
+		int x = actions.get(0).getX();
+
+		assertEquals(x, actions.get(0).getX());
+		assertEquals(x += 639, actions.get(2).getX());
+		assertEquals(x += 973, actions.get(4).getX());
+		assertEquals(x += 1280, actions.get(6).getX());
+		assertEquals(x += 773, actions.get(8).getX());
+		assertEquals(x += 1569, actions.get(10).getX());
+		assertEquals(x += 1304, actions.get(12).getX());
+		assertEquals(x += 1066, actions.get(14).getX());
+		assertEquals(x += 1424, actions.get(16).getX());
+		assertEquals(x += 1246, actions.get(17).getX());
 	}
 
 	@Test
@@ -99,10 +101,11 @@ public class DocxReaderTest {
 		assertEquals("This is the third paragraph.", actions.get(2).getText());
 		assertEquals("This is the fourth paragraph.", actions.get(3).getText());
 
-		// TODO: Line spacing between paragraphs is currently overly generous and needs fixing
-		assertEquals(2451, actions.get(0).getY());
-		assertEquals(3294, actions.get(1).getY());
-		assertEquals(4382, actions.get(2).getY());
-		assertEquals(5716, actions.get(3).getY());
+		// TODO: Line spacing between paragraphs is not perfect, needs further checking
+		int y = actions.get(0).getY();
+
+		assertEquals(y += 633, actions.get(1).getY());
+		assertEquals(y += 878, actions.get(2).getY());
+		assertEquals(y += 1124, actions.get(3).getY());
 	}
 }

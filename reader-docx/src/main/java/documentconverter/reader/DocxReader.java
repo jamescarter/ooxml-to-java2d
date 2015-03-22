@@ -39,7 +39,6 @@ public class DocxReader implements Reader {
 	private int lineSpacingAfter;
 	private int lineSpacingBefore;
 
-
 	/**
 	 * The actions that represent the current line. These are stored until the
 	 * line height can be calculated.
@@ -85,12 +84,12 @@ public class DocxReader implements Reader {
 		PgMar margin = sectPr.getPgMar();
 
 		return new PageLayout(
-			size.getW().intValue(),
-			size.getH().intValue(),
-			margin.getTop().intValue(),
-			margin.getRight().intValue(),
-			margin.getBottom().intValue(),
-			margin.getLeft().intValue()
+			getSize(size.getW().intValue()),
+			getSize(size.getH().intValue()),
+			getSize(margin.getTop().intValue()),
+			getSize(margin.getRight().intValue()),
+			getSize(margin.getBottom().intValue()),
+			getSize(margin.getLeft().intValue())
 		);
 	}
 
@@ -164,9 +163,9 @@ public class DocxReader implements Reader {
 			Spacing spacing = style.getPPr().getSpacing();
 
 			if (spacing != null) {
-				lineSpacing = spacing.getLine().intValue();
-				lineSpacingAfter = spacing.getAfter().intValue();
-				lineSpacingBefore = spacing.getBefore().intValue();
+				lineSpacing = getSize(spacing.getLine().intValue());
+				lineSpacingAfter = getSize(spacing.getAfter().intValue());
+				lineSpacingBefore = getSize(spacing.getBefore().intValue());
 			}
 		}
 
@@ -184,8 +183,8 @@ public class DocxReader implements Reader {
 		if (runProperties.getSz() != null) {
 			float sizePt = runProperties.getSz().getVal().floatValue() / 2;
 
-			// Use 92 dpi instead of the default 72 dpi (and scale by a factor of 20 for trips units)
-			fontConfig.setSize(sizePt * 20 * 96 / 72);
+			// scale by a factor of 20 for trips units
+			fontConfig.setSize(getSize(sizePt * 20));
 			fontConfigChanged = true;
 		}
 
@@ -196,7 +195,7 @@ public class DocxReader implements Reader {
 
 	private void renderActionsForLine() {
 		xOffset = layout.getLeftMargin();
-		yOffset += lineHeight + lineSpacing + lineSpacingBefore;
+		yOffset += lineHeight + lineSpacingBefore;
 
 		for (Object obj : actions) {
 			if (obj instanceof DrawStringAction) {
@@ -211,5 +210,14 @@ public class DocxReader implements Reader {
 		yOffset += lineSpacingAfter;
 		lineHeight = 0;
 		actions.clear();
+	}
+
+	// Convert from 72 dpi to 96
+	private float getSize(float f) {
+		return f * 96 / 72;
+	}
+
+	private int getSize(int i) {
+		return i * 96 / 72;
 	}
 }
