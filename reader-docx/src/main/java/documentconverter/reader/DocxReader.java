@@ -1,5 +1,6 @@
 package documentconverter.reader;
 
+import java.awt.Color;
 import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.util.ArrayDeque;
@@ -7,19 +8,28 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.docx4j.model.structure.SectionWrapper;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
+import org.docx4j.wml.ContentAccessor;
+import org.docx4j.wml.P;
+import org.docx4j.wml.PPr;
 import org.docx4j.wml.PPrBase.PStyle;
 import org.docx4j.wml.PPrBase.Spacing;
+import org.docx4j.wml.R;
+import org.docx4j.wml.RPr;
+import org.docx4j.wml.SectPr;
 import org.docx4j.wml.SectPr.PgMar;
 import org.docx4j.wml.SectPr.PgSz;
-import org.docx4j.wml.*;
+import org.docx4j.wml.Style;
+import org.docx4j.wml.Text;
 
 import javax.xml.bind.JAXBElement;
 
+import documentconverter.renderer.ColorAction;
 import documentconverter.renderer.FontConfig;
 import documentconverter.renderer.Page;
 import documentconverter.renderer.Renderer;
@@ -36,8 +46,9 @@ public class DocxReader implements Reader {
 	private int yOffset;
 	private FontConfig fontConfig = new FontConfig();
 	private int lineSpacing;
-	private int lineSpacingAfter;
-	private int lineSpacingBefore;
+	private int paragraphSpacingAfter;
+	private int paragraphSpacingBefore;
+	private Color color = Color.BLACK;
 
 	/**
 	 * The actions that represent the current line. These are stored until the
@@ -164,8 +175,8 @@ public class DocxReader implements Reader {
 
 			if (spacing != null) {
 				lineSpacing = getSize(spacing.getLine().intValue());
-				lineSpacingAfter = getSize(spacing.getAfter().intValue());
-				lineSpacingBefore = getSize(spacing.getBefore().intValue());
+				paragraphSpacingAfter = getSize(spacing.getAfter().intValue());
+				paragraphSpacingBefore = getSize(spacing.getBefore().intValue());
 			}
 		}
 
@@ -175,11 +186,13 @@ public class DocxReader implements Reader {
 	private void setStyle(RPr runProperties) {
 		boolean fontConfigChanged = false;
 
+		// font
 		if (runProperties.getRFonts() != null) {
 			fontConfig.setName(runProperties.getRFonts().getAscii());
 			fontConfigChanged = true;
 		}
 
+		// font size
 		if (runProperties.getSz() != null) {
 			float sizePt = runProperties.getSz().getVal().floatValue() / 2;
 
@@ -188,26 +201,53 @@ public class DocxReader implements Reader {
 			fontConfigChanged = true;
 		}
 
+		// text color
+		Color newColor = Color.BLACK;
+
+		if (runProperties.getColor() != null) {
+			String strColor = runProperties.getColor().getVal();
+
+			if (strColor.equals("auto")) {
+				newColor = Color.BLACK;
+			} else {
+				String hex = StringUtils.leftPad(strColor, 6, '0');
+
+				newColor = new Color(
+					Integer.valueOf(hex.substring(0, 2), 16),
+					Integer.valueOf(hex.substring(2, 4), 16),
+					Integer.valueOf(hex.substring(4, 6), 16)
+				);
+			}
+		}
+
+		// Only add to actions if there were changes to avoid redundant commands
 		if (fontConfigChanged) {
 			actions.add(new FontConfigAction(fontConfig.getName(), fontConfig.getSize()));
+		}
+
+		if (newColor != color) {
+			actions.add(new ColorAction(newColor));
+			this.color = newColor;
 		}
 	}
 
 	private void renderActionsForLine() {
 		xOffset = layout.getLeftMargin();
-		yOffset += lineHeight + lineSpacingBefore;
+		yOffset += lineHeight + paragraphSpacingBefore;
 
 		for (Object obj : actions) {
 			if (obj instanceof DrawStringAction) {
 				DrawStringAction ds = (DrawStringAction) obj;
 				page.drawString(ds.getText(), ds.getX(), yOffset);
+			} else if (obj instanceof ColorAction) {
+				page.setColor(((ColorAction) obj).getColor());
 			} else if (obj instanceof FontConfigAction) {
 				FontConfigAction fc = (FontConfigAction) obj;
 				page.setFontConfig(new FontConfig(fc.getName(), fc.getSize()));
 			}
 		}
 
-		yOffset += lineSpacingAfter;
+		yOffset += paragraphSpacingAfter;
 		lineHeight = 0;
 		actions.clear();
 	}

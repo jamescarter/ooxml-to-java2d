@@ -2,12 +2,14 @@ package documentconverter.reader;
 
 import static org.junit.Assert.assertEquals;
 
+import java.awt.Color;
 import java.io.File;
 import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
 
+import documentconverter.renderer.ColorAction;
 import documentconverter.renderer.DrawStringAction;
 import documentconverter.renderer.MockPage;
 import documentconverter.renderer.MockRenderer;
@@ -17,6 +19,7 @@ public class DocxReaderTest {
 	private static final File TEST_FILE_BODY_START_NO_HEADER = new File("src/test/resources/reader/docx/body_start_no_header.docx");
 	private static final File TEST_FONT_SIZE = new File("src/test/resources/reader/docx/font_size.docx");
 	private static final File TEST_LINE_HEIGHT = new File("src/test/resources/reader/docx/line_height.docx");
+	private static final File TEST_TEXT_COLOR = new File("src/test/resources/reader/docx/text_color.docx");
 	private MockRenderer renderer;
 
 	@Before
@@ -107,5 +110,21 @@ public class DocxReaderTest {
 		assertEquals(y += 633, actions.get(1).getY());
 		assertEquals(y += 878, actions.get(2).getY());
 		assertEquals(y += 1124, actions.get(3).getY());
+	}
+
+	@Test
+	public void testTextColor() throws ReaderException {
+		new DocxReader(renderer, TEST_TEXT_COLOR).process();
+
+		List<Object> actions = renderer.getPages().get(0).getActions();
+
+		assertEquals(Color.RED, ((ColorAction)actions.get(1)).getColor());
+		assertEquals("Red", ((DrawStringAction)actions.get(2)).getText());
+
+		assertEquals(Color.GREEN, ((ColorAction)actions.get(5)).getColor());
+		assertEquals("green", ((DrawStringAction)actions.get(6)).getText());
+
+		assertEquals(Color.BLUE, ((ColorAction)actions.get(9)).getColor());
+		assertEquals("blue", ((DrawStringAction)actions.get(10)).getText());
 	}
 }

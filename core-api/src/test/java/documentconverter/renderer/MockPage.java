@@ -1,6 +1,8 @@
 package documentconverter.renderer;
 
+import java.awt.Color;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -14,6 +16,11 @@ public class MockPage implements Page {
 	public MockPage(int pageWidth, int pageHeight) {
 		this.pageWidth = pageWidth;
 		this.pageHeight = pageHeight;
+	}
+
+	@Override
+	public void setColor(Color color) {
+		actions.add(new ColorAction(color));
 	}
 
 	@Override
@@ -36,6 +43,10 @@ public class MockPage implements Page {
 
 	public String getAction(int index) {
 		return actions.get(index).toString();
+	}
+
+	public List<Object> getActions() {
+		return Collections.unmodifiableList(actions);
 	}
 
 	public <T> List<T> getActions(Class<T> clazz) {

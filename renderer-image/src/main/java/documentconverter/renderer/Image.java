@@ -26,6 +26,11 @@ public class Image implements Page {
 	}
 
 	@Override
+	public void setColor(Color color) {
+		g.setColor(color);
+	}
+
+	@Override
 	public void setFontConfig(FontConfig fontConfig) {
 	    g.setFont(fontConfig.getFont().deriveFont(fontConfig.getSize() * scale));
 	}
