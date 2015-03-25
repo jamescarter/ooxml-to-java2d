@@ -1,16 +1,18 @@
 package documentconverter.reader;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.awt.Color;
 import java.io.File;
 import java.util.List;
-
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 
 import documentconverter.renderer.ColorAction;
 import documentconverter.renderer.DrawStringAction;
+import documentconverter.renderer.FontStyle;
 import documentconverter.renderer.MockPage;
 import documentconverter.renderer.MockRenderer;
 
@@ -18,6 +20,7 @@ public class DocxReaderTest {
 	private static final File TEST_FILE_LAYOUTS = new File("src/test/resources/reader/docx/layouts.docx");
 	private static final File TEST_FILE_BODY_START_NO_HEADER = new File("src/test/resources/reader/docx/body_start_no_header.docx");
 	private static final File TEST_FONT_SIZE = new File("src/test/resources/reader/docx/font_size.docx");
+	private static final File TEST_FONT_STYLE = new File("src/test/resources/reader/docx/font_style.docx");
 	private static final File TEST_LINE_HEIGHT = new File("src/test/resources/reader/docx/line_height.docx");
 	private static final File TEST_TEXT_COLOR = new File("src/test/resources/reader/docx/text_color.docx");
 	private MockRenderer renderer;
@@ -82,15 +85,29 @@ public class DocxReaderTest {
 		int x = actions.get(0).getX();
 
 		assertEquals(x, actions.get(0).getX());
-		assertEquals(x += 639, actions.get(2).getX());
-		assertEquals(x += 973, actions.get(4).getX());
-		assertEquals(x += 1280, actions.get(6).getX());
-		assertEquals(x += 773, actions.get(8).getX());
-		assertEquals(x += 1569, actions.get(10).getX());
-		assertEquals(x += 1304, actions.get(12).getX());
-		assertEquals(x += 1066, actions.get(14).getX());
-		assertEquals(x += 1424, actions.get(16).getX());
+		assertEquals(x += 632, actions.get(2).getX());
+		assertEquals(x += 951, actions.get(4).getX());
+		assertEquals(x += 1243, actions.get(6).getX());
+		assertEquals(x += 721, actions.get(8).getX());
+		assertEquals(x += 1502, actions.get(10).getX());
+		assertEquals(x += 1222, actions.get(12).getX());
+		assertEquals(x += 970, actions.get(14).getX());
+		assertEquals(x += 1313, actions.get(16).getX());
 		assertEquals(x += 1246, actions.get(17).getX());
+	}
+
+	@Test
+	public void testFontStyle() throws ReaderException {
+		new DocxReader(renderer, TEST_FONT_STYLE).process();
+
+		List<FontConfigAction> actions = renderer.getPages().get(0).getActions(FontConfigAction.class);
+
+		assertSet(actions.get(2).getStyles(), FontStyle.BOLD);
+		assertSet(actions.get(4).getStyles(), FontStyle.ITALIC);
+		assertSet(actions.get(6).getStyles(), FontStyle.UNDERLINE);
+		assertSet(actions.get(8).getStyles(), FontStyle.STRIKETHROUGH);
+		assertSet(actions.get(10).getStyles(), FontStyle.SUPERSCRIPT);
+		assertSet(actions.get(13).getStyles(), FontStyle.BOLD, FontStyle.ITALIC, FontStyle.UNDERLINE, FontStyle.SUPERSCRIPT);
 	}
 
 	@Test
@@ -116,15 +133,23 @@ public class DocxReaderTest {
 	public void testTextColor() throws ReaderException {
 		new DocxReader(renderer, TEST_TEXT_COLOR).process();
 
-		List<Object> actions = renderer.getPages().get(0).getActions();
+		List<Object> actions = renderer.getPages().get(0).getActions(ColorAction.class, DrawStringAction.class);
 
-		assertEquals(Color.RED, ((ColorAction)actions.get(1)).getColor());
-		assertEquals("Red", ((DrawStringAction)actions.get(2)).getText());
+		assertEquals(Color.RED, ((ColorAction)actions.get(0)).getColor());
+		assertEquals("Red", ((DrawStringAction)actions.get(1)).getText());
 
-		assertEquals(Color.GREEN, ((ColorAction)actions.get(5)).getColor());
-		assertEquals("green", ((DrawStringAction)actions.get(6)).getText());
+		assertEquals(Color.GREEN, ((ColorAction)actions.get(4)).getColor());
+		assertEquals("green", ((DrawStringAction)actions.get(5)).getText());
 
-		assertEquals(Color.BLUE, ((ColorAction)actions.get(9)).getColor());
-		assertEquals("blue", ((DrawStringAction)actions.get(10)).getText());
+		assertEquals(Color.BLUE, ((ColorAction)actions.get(8)).getColor());
+		assertEquals("blue", ((DrawStringAction)actions.get(9)).getText());
+	}
+
+	private void assertSet(Set<FontStyle> actualStyles, FontStyle ... expectedStyles) {
+		for (FontStyle expected : expectedStyles) {
+			assertTrue(actualStyles.contains(expected));
+		}
+
+		assertEquals(actualStyles.size(), expectedStyles.length);
 	}
 }

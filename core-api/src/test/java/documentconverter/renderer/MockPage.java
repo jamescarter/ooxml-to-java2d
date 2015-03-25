@@ -25,7 +25,7 @@ public class MockPage implements Page {
 
 	@Override
 	public void setFontConfig(FontConfig fontConfig) {
-		actions.add(new FontConfigAction(fontConfig.getName(), fontConfig.getSize()));
+		actions.add(new FontConfigAction(fontConfig.getName(), fontConfig.getSize(), fontConfig.getStyles()));
 	}
 
 	@Override
@@ -47,6 +47,21 @@ public class MockPage implements Page {
 
 	public List<Object> getActions() {
 		return Collections.unmodifiableList(actions);
+	}
+
+	public List<Object> getActions(Class<?> ... classes) {
+		List<Object> as = new ArrayList<>();
+
+		for (Object action : actions) {
+			for (Class<?> clazz : classes) {
+				if (clazz.isInstance(action)) {
+					as.add(action);
+					break;
+				}
+			}
+		}
+
+		return as;
 	}
 
 	public <T> List<T> getActions(Class<T> clazz) {

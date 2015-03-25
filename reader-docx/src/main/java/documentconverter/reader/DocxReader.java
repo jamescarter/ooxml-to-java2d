@@ -10,6 +10,7 @@ import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.docx4j.jaxb.XPathBinderAssociationIsPartialException;
 import org.docx4j.model.structure.SectionWrapper;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
@@ -19,18 +20,23 @@ import org.docx4j.wml.P;
 import org.docx4j.wml.PPr;
 import org.docx4j.wml.PPrBase.PStyle;
 import org.docx4j.wml.PPrBase.Spacing;
+import org.docx4j.wml.DocDefaults;
 import org.docx4j.wml.R;
 import org.docx4j.wml.RPr;
+import org.docx4j.wml.STVerticalAlignRun;
 import org.docx4j.wml.SectPr;
 import org.docx4j.wml.SectPr.PgMar;
 import org.docx4j.wml.SectPr.PgSz;
 import org.docx4j.wml.Style;
 import org.docx4j.wml.Text;
+import org.docx4j.wml.UnderlineEnumeration;
 
 import javax.xml.bind.JAXBElement;
+import javax.xml.bind.JAXBException;
 
 import documentconverter.renderer.ColorAction;
 import documentconverter.renderer.FontConfig;
+import documentconverter.renderer.FontStyle;
 import documentconverter.renderer.Page;
 import documentconverter.renderer.Renderer;
 
@@ -44,11 +50,12 @@ public class DocxReader implements Reader {
 	private Page page;
 	private int xOffset;
 	private int yOffset;
+	private FontConfig defRpFontConfig = new FontConfig();
 	private FontConfig fontConfig = new FontConfig();
+	private Color color = Color.BLACK;
 	private int lineSpacing;
 	private int paragraphSpacingAfter;
 	private int paragraphSpacingBefore;
-	private Color color = Color.BLACK;
 
 	/**
 	 * The actions that represent the current line. These are stored until the
@@ -79,13 +86,29 @@ public class DocxReader implements Reader {
 
 		main = word.getMainDocumentPart();
 
+		setDefaultStyles();
 		setPageLayouts(word);
 		createPageFromNextLayout();
 		iterateContentParts(main);
 	}
 
+	private void setDefaultStyles() throws ReaderException {
+		List<Object> docs;
+
+		try {
+			docs = (List<Object>) main.getStyleDefinitionsPart().getJAXBNodesViaXPath("/w:styles/w:docDefaults", false);
+		} catch (XPathBinderAssociationIsPartialException | JAXBException e) {
+			throw new ReaderException("Error retrieving default styles", e);
+		}
+
+		DocDefaults docDef = (DocDefaults) docs.get(0);
+		setStyle(docDef.getRPrDefault().getRPr());
+		defRpFontConfig = fontConfig;
+	}
+
 	private void setPageLayouts(WordprocessingMLPackage word) {
 		for (SectionWrapper section : word.getDocumentModel().getSections()) {
+			// TODO: support header and footers - section.getHeaderFooterPolicy()
 			layouts.add(createPageLayout(section.getSectPr()));
 		}
 	}
@@ -155,10 +178,7 @@ public class DocxReader implements Reader {
 	}
 
 	private void processTextRun(R r) {
-		if (r.getRPr() != null) {
-			setStyle(r.getRPr());
-		}
-
+		setStyle(r.getRPr());
 		iterateContentParts(r);
 	}
 
@@ -184,12 +204,16 @@ public class DocxReader implements Reader {
 	}
 
 	private void setStyle(RPr runProperties) {
-		boolean fontConfigChanged = false;
+		if (runProperties == null) {
+			actions.add(new FontConfigAction(defRpFontConfig.getName(), defRpFontConfig.getSize(), defRpFontConfig.getStyles()));
+			return;
+		}
+
+		fontConfig = new FontConfig(defRpFontConfig.getName(), defRpFontConfig.getSize(), defRpFontConfig.getStyles());
 
 		// font
 		if (runProperties.getRFonts() != null) {
 			fontConfig.setName(runProperties.getRFonts().getAscii());
-			fontConfigChanged = true;
 		}
 
 		// font size
@@ -198,7 +222,29 @@ public class DocxReader implements Reader {
 
 			// scale by a factor of 20 for trips units
 			fontConfig.setSize(getSize(sizePt * 20));
-			fontConfigChanged = true;
+		}
+
+		// style
+		// TODO: support other style types (subscript, outline, shadow, ...)
+		if (runProperties.getB() != null) {
+			fontConfig.enableStyle(FontStyle.BOLD);
+		}
+
+		if (runProperties.getI() != null) {
+			fontConfig.enableStyle(FontStyle.ITALIC);
+		}
+
+		if (runProperties.getStrike() != null) {
+			fontConfig.enableStyle(FontStyle.STRIKETHROUGH);
+		}
+
+		if (runProperties.getU() != null && runProperties.getU().getVal().equals(UnderlineEnumeration.SINGLE)) {
+			// TODO: support the other underline types
+			fontConfig.enableStyle(FontStyle.UNDERLINE);
+		}
+
+		if (runProperties.getVertAlign() != null && runProperties.getVertAlign().getVal().equals(STVerticalAlignRun.SUPERSCRIPT)) {
+			fontConfig.enableStyle(FontStyle.SUPERSCRIPT);
 		}
 
 		// text color
@@ -221,9 +267,8 @@ public class DocxReader implements Reader {
 		}
 
 		// Only add to actions if there were changes to avoid redundant commands
-		if (fontConfigChanged) {
-			actions.add(new FontConfigAction(fontConfig.getName(), fontConfig.getSize()));
-		}
+		// TODO: check if the font config has actually changed
+		actions.add(new FontConfigAction(fontConfig.getName(), fontConfig.getSize(), fontConfig.getStyles()));
 
 		if (newColor != color) {
 			actions.add(new ColorAction(newColor));
@@ -243,7 +288,7 @@ public class DocxReader implements Reader {
 				page.setColor(((ColorAction) obj).getColor());
 			} else if (obj instanceof FontConfigAction) {
 				FontConfigAction fc = (FontConfigAction) obj;
-				page.setFontConfig(new FontConfig(fc.getName(), fc.getSize()));
+				page.setFontConfig(new FontConfig(fc.getName(), fc.getSize(), fc.getStyles()));
 			}
 		}
 
