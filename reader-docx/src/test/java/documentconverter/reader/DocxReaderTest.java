@@ -161,20 +161,25 @@ public class DocxReaderTest {
 
 		assertEquals(746, (int) fc1.getSize());
 		assertTrue(fc1.hasStyle(FontStyle.BOLD));
+		assertEquals("Arial", fc1.getName());
 		assertEquals("Title", ((DrawStringAction) actions.get(1)).getText());
 
 		assertEquals(480, (int) fc2.getSize());
+		assertEquals("Arial", fc2.getName());
 		assertEquals("Subtitle", ((DrawStringAction) actions.get(3)).getText());
 
 		assertEquals(480, (int) fc3.getSize());
+		assertEquals("Arial", fc3.getName());
 		assertTrue(fc3.hasStyle(FontStyle.BOLD));
 		assertEquals("Header 1", ((DrawStringAction) actions.get(5)).getText());
 
 		assertEquals(426, (int) fc4.getSize());
+		assertEquals("Arial", fc4.getName());
 		assertTrue(fc4.hasStyle(FontStyle.BOLD));
 		assertEquals("Header 2", ((DrawStringAction) actions.get(7)).getText());
 
 		assertEquals(373, (int) fc5.getSize());
+		assertEquals("Arial", fc5.getName());
 		assertTrue(fc5.hasStyle(FontStyle.BOLD));
 		assertEquals("Header 3", ((DrawStringAction) actions.get(9)).getText());
 	}

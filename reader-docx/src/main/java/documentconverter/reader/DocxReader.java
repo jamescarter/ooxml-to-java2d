@@ -158,9 +158,8 @@ public class DocxReader implements Reader {
 
 		if (properties != null && properties.getPStyle() != null) {
 			PStyle pstyle = properties.getPStyle();
-			Style style = main.getStyleDefinitionsPart().getStyleById(pstyle.getVal());
 
-			paraStyle = getStyle(defaultParaStyle, style);
+			paraStyle = getStyleById(defaultParaStyle, pstyle.getVal());
 		} else {
 			paraStyle = defaultParaStyle;
 		}
@@ -197,8 +196,18 @@ public class DocxReader implements Reader {
 		lineHeight = Math.max(lineHeight, bounds.getHeight());
 	}
 
+	private ParagraphStyle getStyleById(ParagraphStyle baseStyle, String styleId) {
+		return getStyle(baseStyle, main.getStyleDefinitionsPart().getStyleById(styleId));
+	}
+
 	private ParagraphStyle getStyle(ParagraphStyle baseStyle, Style style) {
-		ParagraphStyle newStyle = new ParagraphStyle(baseStyle);
+		ParagraphStyle newStyle;
+
+		if (style.getBasedOn() == null) {
+			newStyle = new ParagraphStyle(baseStyle);
+		} else {
+			newStyle = getStyleById(baseStyle, style.getBasedOn().getVal());
+		}
 
 		if (style.getPPr() != null) {
 			Spacing spacing = style.getPPr().getSpacing();
