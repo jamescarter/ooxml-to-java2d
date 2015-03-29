@@ -9,6 +9,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+
 public class FontConfig {
 	private Font font = new Font(Font.SERIF, Font.PLAIN, 1);
 	private String name = font.getName();
@@ -17,11 +20,11 @@ public class FontConfig {
 
 	public FontConfig() { }
 
-	public FontConfig(String name, float size, Set<FontStyle> styles) {
-		setName(name);
-		setSize(size);
+	public FontConfig(FontConfig fontConfig) {
+		setName(fontConfig.getName());
+		setSize(fontConfig.getSize());
 
-		for (FontStyle fs : styles) {
+		for (FontStyle fs : fontConfig.getStyles()) {
 			enableStyle(fs);
 		}
 	}
@@ -94,4 +97,32 @@ public class FontConfig {
 
 		return font.deriveFont(attributes);
 	}
-} 
+
+	@Override
+	public int hashCode() {
+		return new HashCodeBuilder(31, 16)
+			.append(name)
+			.append(size)
+			.append(styles)
+			.toHashCode();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == null) {
+			return false;
+		} else if (obj == this) {
+			return true;
+		} else if (obj.getClass() != getClass()) {
+			return false;
+		}
+
+		FontConfig fc = (FontConfig) obj;
+
+		return new EqualsBuilder()
+			.append(name, fc.name)
+			.append(size, fc.size)
+			.append(styles, fc.styles)
+			.isEquals();
+	}
+}

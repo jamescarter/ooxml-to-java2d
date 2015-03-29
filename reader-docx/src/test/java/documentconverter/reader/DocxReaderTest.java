@@ -7,11 +7,12 @@ import java.awt.Color;
 import java.io.File;
 import java.util.List;
 import java.util.Set;
+
 import org.junit.Before;
 import org.junit.Test;
 
-import documentconverter.renderer.ColorAction;
 import documentconverter.renderer.DrawStringAction;
+import documentconverter.renderer.FontConfig;
 import documentconverter.renderer.FontStyle;
 import documentconverter.renderer.MockPage;
 import documentconverter.renderer.MockRenderer;
@@ -23,6 +24,7 @@ public class DocxReaderTest {
 	private static final File TEST_FONT_STYLE = new File("src/test/resources/reader/docx/font_style.docx");
 	private static final File TEST_LINE_HEIGHT = new File("src/test/resources/reader/docx/line_height.docx");
 	private static final File TEST_TEXT_COLOR = new File("src/test/resources/reader/docx/text_color.docx");
+	private static final File TEST_HEADER_STYLE = new File("src/test/resources/reader/docx/header_style.docx");
 	private MockRenderer renderer;
 
 	@Before
@@ -100,14 +102,14 @@ public class DocxReaderTest {
 	public void testFontStyle() throws ReaderException {
 		new DocxReader(renderer, TEST_FONT_STYLE).process();
 
-		List<FontConfigAction> actions = renderer.getPages().get(0).getActions(FontConfigAction.class);
+		List<FontConfig> actions = renderer.getPages().get(0).getActions(FontConfig.class);
 
-		assertSet(actions.get(2).getStyles(), FontStyle.BOLD);
-		assertSet(actions.get(4).getStyles(), FontStyle.ITALIC);
-		assertSet(actions.get(6).getStyles(), FontStyle.UNDERLINE);
-		assertSet(actions.get(8).getStyles(), FontStyle.STRIKETHROUGH);
-		assertSet(actions.get(10).getStyles(), FontStyle.SUPERSCRIPT);
-		assertSet(actions.get(13).getStyles(), FontStyle.BOLD, FontStyle.ITALIC, FontStyle.UNDERLINE, FontStyle.SUPERSCRIPT);
+		assertSet(actions.get(0).getStyles(), FontStyle.BOLD);
+		assertSet(actions.get(2).getStyles(), FontStyle.ITALIC);
+		assertSet(actions.get(4).getStyles(), FontStyle.UNDERLINE);
+		assertSet(actions.get(6).getStyles(), FontStyle.STRIKETHROUGH);
+		assertSet(actions.get(8).getStyles(), FontStyle.SUPERSCRIPT);
+		assertSet(actions.get(10).getStyles(), FontStyle.BOLD, FontStyle.ITALIC, FontStyle.UNDERLINE, FontStyle.SUPERSCRIPT);
 	}
 
 	@Test
@@ -133,21 +135,53 @@ public class DocxReaderTest {
 	public void testTextColor() throws ReaderException {
 		new DocxReader(renderer, TEST_TEXT_COLOR).process();
 
-		List<Object> actions = renderer.getPages().get(0).getActions(ColorAction.class, DrawStringAction.class);
+		List<Object> actions = renderer.getPages().get(0).getActions(Color.class, DrawStringAction.class);
 
-		assertEquals(Color.RED, ((ColorAction)actions.get(0)).getColor());
+		assertEquals(Color.RED, ((Color)actions.get(0)));
 		assertEquals("Red", ((DrawStringAction)actions.get(1)).getText());
 
-		assertEquals(Color.GREEN, ((ColorAction)actions.get(4)).getColor());
+		assertEquals(Color.GREEN, ((Color)actions.get(4)));
 		assertEquals("green", ((DrawStringAction)actions.get(5)).getText());
 
-		assertEquals(Color.BLUE, ((ColorAction)actions.get(8)).getColor());
+		assertEquals(Color.BLUE, ((Color)actions.get(8)));
 		assertEquals("blue", ((DrawStringAction)actions.get(9)).getText());
 	}
 
+	@Test
+	public void testHeaderStyle() throws ReaderException {
+		new DocxReader(renderer, TEST_HEADER_STYLE).process();
+
+		List<Object> actions = renderer.getPages().get(0).getActions(FontConfig.class, DrawStringAction.class);
+
+		FontConfig fc1 = (FontConfig) (FontConfig) actions.get(0);
+		FontConfig fc2 = (FontConfig) (FontConfig) actions.get(2);
+		FontConfig fc3 = (FontConfig) (FontConfig) actions.get(4);
+		FontConfig fc4 = (FontConfig) (FontConfig) actions.get(6);
+		FontConfig fc5 = (FontConfig) (FontConfig) actions.get(8);
+
+		assertEquals(746, (int) fc1.getSize());
+		assertTrue(fc1.hasStyle(FontStyle.BOLD));
+		assertEquals("Title", ((DrawStringAction) actions.get(1)).getText());
+
+		assertEquals(480, (int) fc2.getSize());
+		assertEquals("Subtitle", ((DrawStringAction) actions.get(3)).getText());
+
+		assertEquals(480, (int) fc3.getSize());
+		assertTrue(fc3.hasStyle(FontStyle.BOLD));
+		assertEquals("Header 1", ((DrawStringAction) actions.get(5)).getText());
+
+		assertEquals(426, (int) fc4.getSize());
+		assertTrue(fc4.hasStyle(FontStyle.BOLD));
+		assertEquals("Header 2", ((DrawStringAction) actions.get(7)).getText());
+
+		assertEquals(373, (int) fc5.getSize());
+		assertTrue(fc5.hasStyle(FontStyle.BOLD));
+		assertEquals("Header 3", ((DrawStringAction) actions.get(9)).getText());
+	}
+	
 	private void assertSet(Set<FontStyle> actualStyles, FontStyle ... expectedStyles) {
 		for (FontStyle expected : expectedStyles) {
-			assertTrue(actualStyles.contains(expected));
+			assertTrue("Expected " + expected, actualStyles.contains(expected));
 		}
 
 		assertEquals(actualStyles.size(), expectedStyles.length);

@@ -34,7 +34,6 @@ import org.docx4j.wml.UnderlineEnumeration;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 
-import documentconverter.renderer.ColorAction;
 import documentconverter.renderer.FontConfig;
 import documentconverter.renderer.FontStyle;
 import documentconverter.renderer.Page;
@@ -50,12 +49,9 @@ public class DocxReader implements Reader {
 	private Page page;
 	private int xOffset;
 	private int yOffset;
-	private FontConfig defRpFontConfig = new FontConfig();
-	private FontConfig fontConfig = new FontConfig();
-	private Color color = Color.BLACK;
-	private int lineSpacing;
-	private int paragraphSpacingAfter;
-	private int paragraphSpacingBefore;
+	private ParagraphStyle defaultParaStyle;
+	private ParagraphStyle paraStyle;
+	private ParagraphStyle runStyle;
 
 	/**
 	 * The actions that represent the current line. These are stored until the
@@ -102,8 +98,7 @@ public class DocxReader implements Reader {
 		}
 
 		DocDefaults docDef = (DocDefaults) docs.get(0);
-		setStyle(docDef.getRPrDefault().getRPr());
-		defRpFontConfig = fontConfig;
+		defaultParaStyle = getStyle(new ParagraphStyle(), docDef.getRPrDefault().getRPr());
 	}
 
 	private void setPageLayouts(WordprocessingMLPackage word) {
@@ -160,60 +155,74 @@ public class DocxReader implements Reader {
 
 	private void processParagraph(P p) {
 		PPr properties = p.getPPr();
-		PStyle pstyle = properties.getPStyle();
 
-		if (pstyle != null) {
+		if (properties != null && properties.getPStyle() != null) {
+			PStyle pstyle = properties.getPStyle();
 			Style style = main.getStyleDefinitionsPart().getStyleById(pstyle.getVal());
 
-			setStyle(style);
+			paraStyle = getStyle(defaultParaStyle, style);
+		} else {
+			paraStyle = defaultParaStyle;
 		}
 
 		iterateContentParts(p);
 		renderActionsForLine();
 
-		if (properties.getSectPr() != null) {
+		if (properties!= null && properties.getSectPr() != null) {
 			// The presence of SectPr indicates the next part should be started on a new page with a different layout
 			createPageFromNextLayout();
 		}
 	}
 
 	private void processTextRun(R r) {
-		setStyle(r.getRPr());
+		ParagraphStyle newRunStyle = getStyle(paraStyle, r.getRPr());
+
+		if (runStyle == null || !newRunStyle.getFontConfig().equals(runStyle.getFontConfig())) {
+			actions.add(newRunStyle.getFontConfig());
+		}
+
+		if (runStyle == null || !newRunStyle.getColor().equals(runStyle.getColor())) {
+			actions.add(new Color(newRunStyle.getColor().getRGB()));
+		}
+
+		runStyle = newRunStyle;
+
 		iterateContentParts(r);
 	}
 
 	private void processText(Text text) {
 		actions.add(new DrawStringAction(text.getValue(), xOffset));
-		Rectangle2D bounds = fontConfig.getStringBoxSize(text.getValue());
+		Rectangle2D bounds = runStyle.getStringBoxSize(text.getValue());
 		xOffset += bounds.getWidth();
 		lineHeight = Math.max(lineHeight, bounds.getHeight());
 	}
 
-	private void setStyle(Style style) {
+	private ParagraphStyle getStyle(ParagraphStyle baseStyle, Style style) {
+		ParagraphStyle newStyle = new ParagraphStyle(baseStyle);
+
 		if (style.getPPr() != null) {
 			Spacing spacing = style.getPPr().getSpacing();
 
-			if (spacing != null) {
-				lineSpacing = getSize(spacing.getLine().intValue());
-				paragraphSpacingAfter = getSize(spacing.getAfter().intValue());
-				paragraphSpacingBefore = getSize(spacing.getBefore().intValue());
+			if (spacing != null && spacing.getLine() != null) {
+				newStyle.setLineSpacing(getSize(spacing.getLine().intValue()));
+				newStyle.setSpaceBefore(getSize(spacing.getBefore().intValue()));
+				newStyle.setSpaceAfter(getSize(spacing.getAfter().intValue()));
 			}
 		}
 
-		setStyle(style.getRPr());
+		return getStyle(newStyle, style.getRPr());
 	}
 
-	private void setStyle(RPr runProperties) {
+	private ParagraphStyle getStyle(ParagraphStyle baseStyle, RPr runProperties) {
 		if (runProperties == null) {
-			actions.add(new FontConfigAction(defRpFontConfig.getName(), defRpFontConfig.getSize(), defRpFontConfig.getStyles()));
-			return;
+			return baseStyle;
 		}
 
-		fontConfig = new FontConfig(defRpFontConfig.getName(), defRpFontConfig.getSize(), defRpFontConfig.getStyles());
+		ParagraphStyle newStyle = new ParagraphStyle(baseStyle);
 
 		// font
 		if (runProperties.getRFonts() != null) {
-			fontConfig.setName(runProperties.getRFonts().getAscii());
+			newStyle.setFontName(runProperties.getRFonts().getAscii());
 		}
 
 		// font size
@@ -221,30 +230,30 @@ public class DocxReader implements Reader {
 			float sizePt = runProperties.getSz().getVal().floatValue() / 2;
 
 			// scale by a factor of 20 for trips units
-			fontConfig.setSize(getSize(sizePt * 20));
+			newStyle.setFontSize(getSize(sizePt * 20));
 		}
 
 		// style
 		// TODO: support other style types (subscript, outline, shadow, ...)
 		if (runProperties.getB() != null) {
-			fontConfig.enableStyle(FontStyle.BOLD);
+			newStyle.enableFontStyle(FontStyle.BOLD);
 		}
 
 		if (runProperties.getI() != null) {
-			fontConfig.enableStyle(FontStyle.ITALIC);
+			newStyle.enableFontStyle(FontStyle.ITALIC);
 		}
 
 		if (runProperties.getStrike() != null) {
-			fontConfig.enableStyle(FontStyle.STRIKETHROUGH);
+			newStyle.enableFontStyle(FontStyle.STRIKETHROUGH);
 		}
 
 		if (runProperties.getU() != null && runProperties.getU().getVal().equals(UnderlineEnumeration.SINGLE)) {
 			// TODO: support the other underline types
-			fontConfig.enableStyle(FontStyle.UNDERLINE);
+			newStyle.enableFontStyle(FontStyle.UNDERLINE);
 		}
 
 		if (runProperties.getVertAlign() != null && runProperties.getVertAlign().getVal().equals(STVerticalAlignRun.SUPERSCRIPT)) {
-			fontConfig.enableStyle(FontStyle.SUPERSCRIPT);
+			newStyle.enableFontStyle(FontStyle.SUPERSCRIPT);
 		}
 
 		// text color
@@ -266,33 +275,28 @@ public class DocxReader implements Reader {
 			}
 		}
 
-		// Only add to actions if there were changes to avoid redundant commands
-		// TODO: check if the font config has actually changed
-		actions.add(new FontConfigAction(fontConfig.getName(), fontConfig.getSize(), fontConfig.getStyles()));
+		newStyle.setColor(newColor);
 
-		if (newColor != color) {
-			actions.add(new ColorAction(newColor));
-			this.color = newColor;
-		}
+		return newStyle;
 	}
 
 	private void renderActionsForLine() {
 		xOffset = layout.getLeftMargin();
-		yOffset += lineHeight + paragraphSpacingBefore;
+		yOffset += lineHeight + paraStyle.getSpaceBefore();
 
 		for (Object obj : actions) {
 			if (obj instanceof DrawStringAction) {
-				DrawStringAction ds = (DrawStringAction) obj;
-				page.drawString(ds.getText(), ds.getX(), yOffset);
-			} else if (obj instanceof ColorAction) {
-				page.setColor(((ColorAction) obj).getColor());
-			} else if (obj instanceof FontConfigAction) {
-				FontConfigAction fc = (FontConfigAction) obj;
-				page.setFontConfig(new FontConfig(fc.getName(), fc.getSize(), fc.getStyles()));
+				DrawStringAction dsa = (DrawStringAction) obj;
+				page.drawString(dsa.getText(), dsa.getX(), yOffset);
+			} else if (obj instanceof Color) {
+				page.setColor(((Color) obj));
+			} else if (obj instanceof FontConfig) {
+				FontConfig fc = (FontConfig) obj;
+				page.setFontConfig(fc);
 			}
 		}
 
-		yOffset += paragraphSpacingAfter;
+		yOffset += paraStyle.getSpaceAfter();
 		lineHeight = 0;
 		actions.clear();
 	}

@@ -6,8 +6,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import documentconverter.reader.FontConfigAction;
-
 public class MockPage implements Page {
 	private List<Object> actions = new ArrayList<>();
 	private int pageWidth;
@@ -20,12 +18,12 @@ public class MockPage implements Page {
 
 	@Override
 	public void setColor(Color color) {
-		actions.add(new ColorAction(color));
+		actions.add(color);
 	}
 
 	@Override
 	public void setFontConfig(FontConfig fontConfig) {
-		actions.add(new FontConfigAction(fontConfig.getName(), fontConfig.getSize(), fontConfig.getStyles()));
+		actions.add(fontConfig);
 	}
 
 	@Override
