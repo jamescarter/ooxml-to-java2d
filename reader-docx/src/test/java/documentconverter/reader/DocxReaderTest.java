@@ -25,6 +25,7 @@ public class DocxReaderTest {
 	private static final File TEST_LINE_HEIGHT = new File("src/test/resources/reader/docx/line_height.docx");
 	private static final File TEST_TEXT_COLOR = new File("src/test/resources/reader/docx/text_color.docx");
 	private static final File TEST_HEADER_STYLE = new File("src/test/resources/reader/docx/header_style.docx");
+	private static final File TEST_WORD_WRAP = new File("src/test/resources/reader/docx/word_wrap.docx");
 	private MockRenderer renderer;
 
 	@Before
@@ -183,7 +184,41 @@ public class DocxReaderTest {
 		assertTrue(fc5.hasStyle(FontStyle.BOLD));
 		assertEquals("Header 3", ((DrawStringAction) actions.get(9)).getText());
 	}
-	
+
+	@Test
+	public void testWordWrap() throws ReaderException {
+		new DocxReader(renderer, TEST_WORD_WRAP).process();
+
+		List<DrawStringAction> actions = renderer.getPages().get(0).getActions(DrawStringAction.class);
+
+		DrawStringAction line1 = actions.get(0);
+		assertEquals("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam aliquet", line1.getText());
+
+		DrawStringAction line2 = actions.get(1);
+		assertEquals("vehicula magna, sed maximus tellus imperdiet sit amet. Maecenas eu", line2.getText());
+		assertTrue(line2.getY() > line1.getY());
+
+		DrawStringAction line3 = actions.get(2);
+		assertEquals("maximus dolor. Phasellus tempor, enim non mattis porta, neque est", line3.getText());
+		assertTrue(line3.getY() > line2.getY());
+
+		DrawStringAction line4 = actions.get(3);
+		assertEquals("elementum sapien, vel blandit elit turpis at orci. Sed in dolor nulla. Nunc", line4.getText());
+		assertTrue(line4.getY() > line3.getY());
+
+		DrawStringAction line5 = actions.get(4);
+		assertEquals("aliquet enim eu orci finibus tincidunt. Fusce consequat blandit tellus, vel", line5.getText());
+		assertTrue(line5.getY() > line4.getY());
+
+		DrawStringAction line6 = actions.get(5);
+		assertEquals("auctor dui dictum sollicitudin. Maecenas feugiat, augue vitae egestas", line6.getText());
+		assertTrue(line6.getY() > line5.getY());
+
+		DrawStringAction line7 = actions.get(6);
+		assertEquals("iaculis, neque nunc sodales felis, non tempor lorem nisi nec arcu.", line7.getText());
+		assertTrue(line7.getY() > line6.getY());
+	}
+
 	private void assertSet(Set<FontStyle> actualStyles, FontStyle ... expectedStyles) {
 		for (FontStyle expected : expectedStyles) {
 			assertTrue("Expected " + expected, actualStyles.contains(expected));

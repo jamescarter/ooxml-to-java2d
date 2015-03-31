@@ -143,7 +143,7 @@ public class DocxReader implements Reader {
 				JAXBElement<?> element = (JAXBElement<?>) obj;
 
 				if (element.getDeclaredType().equals(Text.class)) {
-					processText((Text) element.getValue());
+					processText(((Text) element.getValue()).getValue());
 				} else {
 					LOG.trace("Unhandled JAXBElement class " + obj.getClass());
 				}
@@ -164,8 +164,12 @@ public class DocxReader implements Reader {
 			paraStyle = defaultParaStyle;
 		}
 
+		yOffset += paraStyle.getSpaceBefore();
+
 		iterateContentParts(p);
 		renderActionsForLine();
+
+		yOffset += paraStyle.getSpaceAfter();
 
 		if (properties!= null && properties.getSectPr() != null) {
 			// The presence of SectPr indicates the next part should be started on a new page with a different layout
@@ -189,11 +193,40 @@ public class DocxReader implements Reader {
 		iterateContentParts(r);
 	}
 
-	private void processText(Text text) {
-		actions.add(new DrawStringAction(text.getValue(), xOffset));
-		Rectangle2D bounds = runStyle.getStringBoxSize(text.getValue());
-		xOffset += bounds.getWidth();
+	private void processText(String text) {
+		Rectangle2D bounds = runStyle.getStringBoxSize(text);
+
 		lineHeight = Math.max(lineHeight, bounds.getHeight());
+
+		// If the text needs wrapping, work out how to fit it into multiple lines
+		if (xOffset + bounds.getWidth() > layout.getWidth() - layout.getRightMargin()) {
+			String[] words = text.split(" ");
+			String newText = "";
+
+			for (int i=0; i<words.length; i++) {
+				if (newText.isEmpty()) {
+					bounds = runStyle.getStringBoxSize(words[i]);
+				} else {
+					bounds = runStyle.getStringBoxSize(newText + " " + words[i]);
+				}
+
+				if (xOffset + bounds.getWidth() > layout.getWidth() - layout.getRightMargin()) {
+					break;
+				} else if (newText.isEmpty()) {
+					newText = words[i];
+				} else {
+					newText += " " + words[i];
+				}
+			}
+
+			actions.add(new DrawStringAction(newText, xOffset));
+
+			renderActionsForLine();
+			processText(text.substring(newText.length() + 1));
+		} else {
+			actions.add(new DrawStringAction(text, xOffset));
+			xOffset += bounds.getWidth();
+		}
 	}
 
 	private ParagraphStyle getStyleById(ParagraphStyle baseStyle, String styleId) {
@@ -290,8 +323,7 @@ public class DocxReader implements Reader {
 	}
 
 	private void renderActionsForLine() {
-		xOffset = layout.getLeftMargin();
-		yOffset += lineHeight + paraStyle.getSpaceBefore();
+		yOffset += lineHeight;
 
 		for (Object obj : actions) {
 			if (obj instanceof DrawStringAction) {
@@ -305,7 +337,7 @@ public class DocxReader implements Reader {
 			}
 		}
 
-		yOffset += paraStyle.getSpaceAfter();
+		xOffset = layout.getLeftMargin();
 		lineHeight = 0;
 		actions.clear();
 	}
