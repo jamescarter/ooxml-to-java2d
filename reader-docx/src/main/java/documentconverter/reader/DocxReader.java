@@ -197,7 +197,7 @@ public class DocxReader implements Reader {
 		Rectangle2D bounds = runStyle.getStringBoxSize(text);
 
 		lineHeight = Math.max(lineHeight, bounds.getHeight());
-
+ 
 		// If the text needs wrapping, work out how to fit it into multiple lines
 		if (xOffset + bounds.getWidth() > layout.getWidth() - layout.getRightMargin()) {
 			String[] words = text.split(" ");
@@ -210,8 +210,24 @@ public class DocxReader implements Reader {
 					bounds = runStyle.getStringBoxSize(newText + " " + words[i]);
 				}
 
+				// Check if adding the word will push it over the page content width
 				if (xOffset + bounds.getWidth() > layout.getWidth() - layout.getRightMargin()) {
-					break;
+					// If this is the first word, break it up
+					if (i == 0) {
+						char[] chars = text.toCharArray();
+
+						for (int k=0; k<chars.length; k++) {
+							bounds = runStyle.getStringBoxSize(newText + chars[k]);
+
+							if (xOffset + bounds.getWidth() > layout.getWidth() - layout.getRightMargin()) {
+								break;
+							} else {
+								newText += chars[k];
+							}
+						}
+					} else {
+						break;
+					}
 				} else if (newText.isEmpty()) {
 					newText = words[i];
 				} else {
@@ -222,7 +238,7 @@ public class DocxReader implements Reader {
 			actions.add(new DrawStringAction(newText, xOffset));
 
 			renderActionsForLine();
-			processText(text.substring(newText.length() + 1));
+			processText(text.substring(newText.length()).trim());
 		} else {
 			actions.add(new DrawStringAction(text, xOffset));
 			xOffset += bounds.getWidth();

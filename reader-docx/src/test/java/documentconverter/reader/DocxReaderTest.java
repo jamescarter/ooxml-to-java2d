@@ -26,6 +26,7 @@ public class DocxReaderTest {
 	private static final File TEST_TEXT_COLOR = new File("src/test/resources/reader/docx/text_color.docx");
 	private static final File TEST_HEADER_STYLE = new File("src/test/resources/reader/docx/header_style.docx");
 	private static final File TEST_WORD_WRAP = new File("src/test/resources/reader/docx/word_wrap.docx");
+	private static final File TEST_WORD_WRAP_CONTINUOUS = new File("src/test/resources/reader/docx/word_wrap_continuous.docx");
 	private MockRenderer renderer;
 
 	@Before
@@ -217,6 +218,24 @@ public class DocxReaderTest {
 		DrawStringAction line7 = actions.get(6);
 		assertEquals("iaculis, neque nunc sodales felis, non tempor lorem nisi nec arcu.", line7.getText());
 		assertTrue(line7.getY() > line6.getY());
+	}
+
+	@Test
+	public void testWordWrapContinuous() throws ReaderException {
+		new DocxReader(renderer, TEST_WORD_WRAP_CONTINUOUS).process();
+
+		List<DrawStringAction> actions = renderer.getPages().get(0).getActions(DrawStringAction.class);
+
+		DrawStringAction line1 = actions.get(0);
+		assertEquals("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", line1.getText());
+
+		DrawStringAction line2 = actions.get(1);
+		assertEquals("BBBBBBBBBBBBB CCCCCCCCCCCCC", line2.getText());
+		assertTrue(line2.getY() > line1.getY());
+
+		DrawStringAction line3 = actions.get(2);
+		assertEquals("DDDDDDDDDDDD", line3.getText());
+		assertTrue(line3.getY() > line2.getY());
 	}
 
 	private void assertSet(Set<FontStyle> actualStyles, FontStyle ... expectedStyles) {
