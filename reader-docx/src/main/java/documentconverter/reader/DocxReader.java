@@ -22,6 +22,7 @@ import org.docx4j.wml.PPrBase.PStyle;
 import org.docx4j.wml.PPrBase.Spacing;
 import org.docx4j.wml.DocDefaults;
 import org.docx4j.wml.R;
+import org.docx4j.wml.R.Tab;
 import org.docx4j.wml.RPr;
 import org.docx4j.wml.STVerticalAlignRun;
 import org.docx4j.wml.SectPr;
@@ -41,6 +42,7 @@ import documentconverter.renderer.Renderer;
 
 public class DocxReader implements Reader {
 	private static final Logger LOG = Logger.getLogger(DocxReader.class);
+	private static final int TAB_WIDTH = 950;
 	private Renderer renderer;
 	private File docx;
 	private MainDocumentPart main;
@@ -144,8 +146,10 @@ public class DocxReader implements Reader {
 
 				if (element.getDeclaredType().equals(Text.class)) {
 					processText(((Text) element.getValue()).getValue());
+				} else if (element.getDeclaredType().equals(Tab.class)) {
+					processTab((Tab) element.getValue());
 				} else {
-					LOG.trace("Unhandled JAXBElement class " + obj.getClass());
+					LOG.trace("Unhandled JAXBElement class " + element.getDeclaredType());
 				}
 			} else {
 				LOG.trace("Unhandled document class " + obj.getClass());
@@ -243,6 +247,10 @@ public class DocxReader implements Reader {
 			actions.add(new DrawStringAction(text, xOffset));
 			xOffset += bounds.getWidth();
 		}
+	}
+
+	private void processTab(Tab tab) {
+		xOffset += TAB_WIDTH - ((xOffset - layout.getLeftMargin()) % TAB_WIDTH);
 	}
 
 	private ParagraphStyle getStyleById(ParagraphStyle baseStyle, String styleId) {

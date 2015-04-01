@@ -27,6 +27,7 @@ public class DocxReaderTest {
 	private static final File TEST_HEADER_STYLE = new File("src/test/resources/reader/docx/header_style.docx");
 	private static final File TEST_WORD_WRAP = new File("src/test/resources/reader/docx/word_wrap.docx");
 	private static final File TEST_WORD_WRAP_CONTINUOUS = new File("src/test/resources/reader/docx/word_wrap_continuous.docx");
+	private static final File TEST_TABBED = new File("src/test/resources/reader/docx/tabbed.docx");
 	private MockRenderer renderer;
 
 	@Before
@@ -236,6 +237,47 @@ public class DocxReaderTest {
 		DrawStringAction line3 = actions.get(2);
 		assertEquals("DDDDDDDDDDDD", line3.getText());
 		assertTrue(line3.getY() > line2.getY());
+	}
+
+	@Test
+	public void testTabbed() throws ReaderException {
+		new DocxReader(renderer, TEST_TABBED).process();
+
+		List<DrawStringAction> actions = renderer.getPages().get(0).getActions(DrawStringAction.class);
+
+		DrawStringAction c1 = actions.get(0);
+		assertEquals("Column 1", c1.getText());
+
+		DrawStringAction c2 = actions.get(1);
+		assertEquals("Column 2", c2.getText());
+		assertTrue(c2.getX() > c1.getX());
+
+		DrawStringAction c3 = actions.get(2);
+		assertEquals("Column 3", c3.getText());
+		assertTrue(c3.getX() > c2.getX());
+
+		DrawStringAction r1c1 = actions.get(3);
+		assertEquals("R1C1", r1c1.getText());
+		assertEquals(c1.getX(), r1c1.getX());
+
+		DrawStringAction r1c2 = actions.get(4);
+		assertEquals("R1C2", r1c2.getText());
+		assertEquals(c2.getX(), r1c2.getX());
+		assertTrue(r1c2.getX() > r1c1.getX());
+
+		DrawStringAction r1c3 = actions.get(5);
+		assertEquals("R1C3", r1c3.getText());
+		assertEquals(c3.getX(), r1c3.getX());
+		assertTrue(r1c3.getX() > r1c2.getX());
+
+		DrawStringAction r2c2 = actions.get(6);
+		assertEquals("R2C2", r2c2.getText());
+		assertEquals(c2.getX(), r2c2.getX());
+
+		DrawStringAction r2c3 = actions.get(7);
+		assertEquals("R2C3", r2c3.getText());
+		assertEquals(c3.getX(), r2c3.getX());
+		assertTrue(r2c3.getX() > r2c2.getX());
 	}
 
 	private void assertSet(Set<FontStyle> actualStyles, FontStyle ... expectedStyles) {
