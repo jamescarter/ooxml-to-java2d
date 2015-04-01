@@ -160,10 +160,28 @@ public class DocxReader implements Reader {
 	private void processParagraph(P p) {
 		PPr properties = p.getPPr();
 
-		if (properties != null && properties.getPStyle() != null) {
-			PStyle pstyle = properties.getPStyle();
+		if (properties != null) {
+			if (properties.getPStyle() != null) {
+				PStyle pstyle = properties.getPStyle();
 
-			paraStyle = getStyleById(defaultParaStyle, pstyle.getVal());
+				paraStyle = getStyleById(defaultParaStyle, pstyle.getVal());
+			} else {
+				paraStyle = defaultParaStyle;
+			}
+
+			if (properties.getJc() != null) {
+				switch(properties.getJc().getVal()) {
+					case LEFT:
+						paraStyle.setAlignment(Alignment.LEFT);
+					break;
+					case RIGHT:
+						paraStyle.setAlignment(Alignment.RIGHT);
+					break;
+					case CENTER:
+						paraStyle.setAlignment(Alignment.CENTER);
+					break;
+				}
+			}
 		} else {
 			paraStyle = defaultParaStyle;
 		}
@@ -348,11 +366,24 @@ public class DocxReader implements Reader {
 
 	private void renderActionsForLine() {
 		yOffset += lineHeight;
+		int alignmentOffset = 0;
+
+		switch(paraStyle.getAlignment()) {
+			case RIGHT:
+				alignmentOffset = layout.getWidth() - layout.getRightMargin() - xOffset;
+			break;
+			case CENTER:
+				alignmentOffset = (layout.getWidth() - layout.getRightMargin() - xOffset) / 2;
+			break;
+			default:
+				// default to left aligned
+			break;
+		}
 
 		for (Object obj : actions) {
 			if (obj instanceof DrawStringAction) {
 				DrawStringAction dsa = (DrawStringAction) obj;
-				page.drawString(dsa.getText(), dsa.getX(), yOffset);
+				page.drawString(dsa.getText(), dsa.getX() + alignmentOffset, yOffset);
 			} else if (obj instanceof Color) {
 				page.setColor(((Color) obj));
 			} else if (obj instanceof FontConfig) {
