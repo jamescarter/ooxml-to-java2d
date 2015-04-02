@@ -48,14 +48,14 @@ public class DocxReaderTest {
 		MockPage page2 = pages.get(1);
 		MockPage page3 = pages.get(2);
 
-		assertEquals(16320, page1.getPageWidth());
-		assertEquals(21120, page1.getPageHeight());
+		assertEquals(12240, page1.getPageWidth());
+		assertEquals(15840, page1.getPageHeight());
 
-		assertEquals(17310, page2.getPageWidth());
-		assertEquals(8617, page2.getPageHeight());
+		assertEquals(12983, page2.getPageWidth());
+		assertEquals(6463, page2.getPageHeight());
 
-		assertEquals(21120, page3.getPageWidth());
-		assertEquals(16320, page3.getPageHeight());
+		assertEquals(15840, page3.getPageWidth());
+		assertEquals(12240, page3.getPageHeight());
 	}
 
 	@Test
@@ -67,8 +67,8 @@ public class DocxReaderTest {
 		DrawStringAction page1Action = pages.get(0).getActions(DrawStringAction.class).get(0);
 		DrawStringAction page2Action = pages.get(1).getActions(DrawStringAction.class).get(0);
 
-		assertEquals("DrawStringAction[text=Hello, World!,x=1920,y=2277]", page1Action.toString());
-		assertEquals("DrawStringAction[text=Hello, World!,x=1512,y=2625]", page2Action.toString());
+		assertEquals("DrawStringAction[text=Hello, World!,x=1440,y=1708]", page1Action.toString());
+		assertEquals("DrawStringAction[text=Hello, World!,x=1134,y=1969]", page2Action.toString());
 	}
 
 	@Test
@@ -91,15 +91,15 @@ public class DocxReaderTest {
 		int x = actions.get(0).getX();
 
 		assertEquals(x, actions.get(0).getX());
-		assertEquals(x += 632, actions.get(2).getX());
-		assertEquals(x += 951, actions.get(4).getX());
-		assertEquals(x += 1243, actions.get(6).getX());
-		assertEquals(x += 721, actions.get(8).getX());
-		assertEquals(x += 1502, actions.get(10).getX());
-		assertEquals(x += 1222, actions.get(12).getX());
-		assertEquals(x += 970, actions.get(14).getX());
-		assertEquals(x += 1313, actions.get(16).getX());
-		assertEquals(x += 1246, actions.get(17).getX());
+		assertEquals(x += 474, actions.get(2).getX());
+		assertEquals(x += 714, actions.get(4).getX());
+		assertEquals(x += 932, actions.get(6).getX());
+		assertEquals(x += 541, actions.get(8).getX());
+		assertEquals(x += 1127, actions.get(10).getX());
+		assertEquals(x += 916, actions.get(12).getX());
+		assertEquals(x += 728, actions.get(14).getX());
+		assertEquals(x += 985, actions.get(16).getX());
+		assertEquals(x += 934, actions.get(17).getX());
 	}
 
 	@Test
@@ -130,9 +130,9 @@ public class DocxReaderTest {
 		// TODO: Line spacing between paragraphs is not perfect, needs further checking
 		int y = actions.get(0).getY();
 
-		assertEquals(y += 633, actions.get(1).getY());
-		assertEquals(y += 878, actions.get(2).getY());
-		assertEquals(y += 1124, actions.get(3).getY());
+		assertEquals(y += 475, actions.get(1).getY());
+		assertEquals(y += 659, actions.get(2).getY());
+		assertEquals(y += 843, actions.get(3).getY());
 	}
 
 	@Test
@@ -163,26 +163,26 @@ public class DocxReaderTest {
 		FontConfig fc4 = (FontConfig) (FontConfig) actions.get(6);
 		FontConfig fc5 = (FontConfig) (FontConfig) actions.get(8);
 
-		assertEquals(746, (int) fc1.getSize());
+		assertEquals(560, (int) fc1.getSize());
 		assertTrue(fc1.hasStyle(FontStyle.BOLD));
 		assertEquals("Arial", fc1.getName());
 		assertEquals("Title", ((DrawStringAction) actions.get(1)).getText());
 
-		assertEquals(480, (int) fc2.getSize());
+		assertEquals(360, (int) fc2.getSize());
 		assertEquals("Arial", fc2.getName());
 		assertEquals("Subtitle", ((DrawStringAction) actions.get(3)).getText());
 
-		assertEquals(480, (int) fc3.getSize());
+		assertEquals(360, (int) fc3.getSize());
 		assertEquals("Arial", fc3.getName());
 		assertTrue(fc3.hasStyle(FontStyle.BOLD));
 		assertEquals("Header 1", ((DrawStringAction) actions.get(5)).getText());
 
-		assertEquals(426, (int) fc4.getSize());
+		assertEquals(320, (int) fc4.getSize());
 		assertEquals("Arial", fc4.getName());
 		assertTrue(fc4.hasStyle(FontStyle.BOLD));
 		assertEquals("Header 2", ((DrawStringAction) actions.get(7)).getText());
 
-		assertEquals(373, (int) fc5.getSize());
+		assertEquals(280, (int) fc5.getSize());
 		assertEquals("Arial", fc5.getName());
 		assertTrue(fc5.hasStyle(FontStyle.BOLD));
 		assertEquals("Header 3", ((DrawStringAction) actions.get(9)).getText());
@@ -289,15 +289,15 @@ public class DocxReaderTest {
 
 		DrawStringAction left = actions.get(0);
 		assertEquals("Left aligned text", left.getText());
-		assertEquals(1879, left.getY());
+		assertEquals(1409, left.getY());
 
 		DrawStringAction right = actions.get(1);
 		assertEquals("Right aligned text", right.getText());
-		assertEquals(2246, right.getY());
+		assertEquals(1684, right.getY());
 
 		DrawStringAction center = actions.get(2);
 		assertEquals("Center aligned text", center.getText());
-		assertEquals(2613, center.getY());
+		assertEquals(1959, center.getY());
 	}
 
 	private void assertSet(Set<FontStyle> actualStyles, FontStyle ... expectedStyles) {

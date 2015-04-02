@@ -115,12 +115,12 @@ public class DocxReader implements Reader {
 		PgMar margin = sectPr.getPgMar();
 
 		return new PageLayout(
-			getSize(size.getW().intValue()),
-			getSize(size.getH().intValue()),
-			getSize(margin.getTop().intValue()),
-			getSize(margin.getRight().intValue()),
-			getSize(margin.getBottom().intValue()),
-			getSize(margin.getLeft().intValue())
+			size.getW().intValue(),
+			size.getH().intValue(),
+			margin.getTop().intValue(),
+			margin.getRight().intValue(),
+			margin.getBottom().intValue(),
+			margin.getLeft().intValue()
 		);
 	}
 
@@ -288,9 +288,9 @@ public class DocxReader implements Reader {
 			Spacing spacing = style.getPPr().getSpacing();
 
 			if (spacing != null && spacing.getLine() != null) {
-				newStyle.setLineSpacing(getSize(spacing.getLine().intValue()));
-				newStyle.setSpaceBefore(getSize(spacing.getBefore().intValue()));
-				newStyle.setSpaceAfter(getSize(spacing.getAfter().intValue()));
+				newStyle.setLineSpacing(spacing.getLine().intValue());
+				newStyle.setSpaceBefore(spacing.getBefore().intValue());
+				newStyle.setSpaceAfter(spacing.getAfter().intValue());
 			}
 		}
 
@@ -314,7 +314,7 @@ public class DocxReader implements Reader {
 			float sizePt = runProperties.getSz().getVal().floatValue() / 2;
 
 			// scale by a factor of 20 for trips units
-			newStyle.setFontSize(getSize(sizePt * 20));
+			newStyle.setFontSize(sizePt * 20);
 		}
 
 		// style
@@ -395,14 +395,5 @@ public class DocxReader implements Reader {
 		xOffset = layout.getLeftMargin();
 		lineHeight = 0;
 		actions.clear();
-	}
-
-	// Convert from 72 dpi to 96
-	private float getSize(float f) {
-		return f * 96 / 72;
-	}
-
-	private int getSize(int i) {
-		return i * 96 / 72;
 	}
 }
