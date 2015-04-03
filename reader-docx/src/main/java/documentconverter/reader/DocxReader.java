@@ -159,34 +159,31 @@ public class DocxReader implements Reader {
 
 	private void processParagraph(P p) {
 		PPr properties = p.getPPr();
+		ParagraphStyle newParaStyle = new ParagraphStyle(defaultParaStyle);
 
 		if (properties != null) {
 			if (properties.getPStyle() != null) {
 				PStyle pstyle = properties.getPStyle();
 
-				paraStyle = getStyleById(defaultParaStyle, pstyle.getVal());
-			} else {
-				paraStyle = defaultParaStyle;
+				newParaStyle = getStyleById(defaultParaStyle, pstyle.getVal());
 			}
 
 			if (properties.getJc() != null) {
 				switch(properties.getJc().getVal()) {
-					case LEFT:
-						paraStyle.setAlignment(Alignment.LEFT);
-					break;
 					case RIGHT:
-						paraStyle.setAlignment(Alignment.RIGHT);
+						newParaStyle.setAlignment(Alignment.RIGHT);
 					break;
 					case CENTER:
-						paraStyle.setAlignment(Alignment.CENTER);
+						newParaStyle.setAlignment(Alignment.CENTER);
 					break;
+					default:
+						// default to LEFT alignment
 				}
 			}
-		} else {
-			paraStyle = defaultParaStyle;
 		}
 
-		yOffset += paraStyle.getSpaceBefore();
+		yOffset += newParaStyle.getSpaceBefore();
+		paraStyle = newParaStyle;
 
 		iterateContentParts(p);
 		renderActionsForLine();
