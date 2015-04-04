@@ -29,6 +29,7 @@ public class DocxReaderTest {
 	private static final File TEST_WORD_WRAP_CONTINUOUS = new File("src/test/resources/reader/docx/word_wrap_continuous.docx");
 	private static final File TEST_TABBED = new File("src/test/resources/reader/docx/tabbed.docx");
 	private static final File TEST_ALIGNMENT = new File("src/test/resources/reader/docx/alignment.docx");
+	private static final File TEST_TABLE_SIMPLE = new File("src/test/resources/reader/docx/table_simple.docx");
 	private MockRenderer renderer;
 
 	@Before
@@ -298,6 +299,33 @@ public class DocxReaderTest {
 		DrawStringAction center = actions.get(2);
 		assertEquals("Center aligned text", center.getText());
 		assertEquals(1959, center.getY());
+	}
+
+	@Test
+	public void testTableSimple() throws ReaderException {
+		new DocxReader(renderer, TEST_TABLE_SIMPLE).process();
+
+		List<DrawStringAction> actions = renderer.getPages().get(0).getActions(DrawStringAction.class);
+
+		DrawStringAction r1c1 = actions.get(0);
+		assertEquals("Header 1", r1c1.getText());
+		assertEquals(1134, r1c1.getX());
+		assertEquals(1409, r1c1.getY());
+
+		DrawStringAction r1c2 = actions.get(1);
+		assertEquals("Header 2", r1c2.getText());
+		assertEquals(r1c1.getX(), r1c1.getX());
+		assertEquals(r1c1.getY(), r1c2.getY());
+
+		DrawStringAction r2c1 = actions.get(2);
+		assertEquals("Row 1 H1", r2c1.getText());
+		assertEquals(r1c1.getX(), r2c1.getX());
+		assertEquals(1684, r2c1.getY());
+
+		DrawStringAction r2c2 = actions.get(3);
+		assertEquals("Row 1 H2", r2c2.getText());
+		assertEquals(r1c1.getX(), r2c1.getX());
+		assertEquals(r2c1.getY(), r2c2.getY());
 	}
 
 	private void assertSet(Set<FontStyle> actualStyles, FontStyle ... expectedStyles) {

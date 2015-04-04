@@ -4,7 +4,9 @@ import java.awt.Color;
 import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
@@ -28,7 +30,11 @@ import org.docx4j.wml.SectPr;
 import org.docx4j.wml.SectPr.PgMar;
 import org.docx4j.wml.SectPr.PgSz;
 import org.docx4j.wml.Style;
+import org.docx4j.wml.Tbl;
+import org.docx4j.wml.TblGridCol;
+import org.docx4j.wml.Tc;
 import org.docx4j.wml.Text;
+import org.docx4j.wml.Tr;
 import org.docx4j.wml.UnderlineEnumeration;
 
 import javax.xml.bind.JAXBElement;
@@ -135,6 +141,8 @@ public class DocxReader implements Reader {
 					processText(((Text) element.getValue()).getValue(), column);
 				} else if (element.getDeclaredType().equals(Tab.class)) {
 					processTab((Tab) element.getValue(), column);
+				} else if (element.getDeclaredType().equals(Tbl.class)) {
+					processTable((Tbl) element.getValue(), column);
 				} else {
 					LOG.trace("Unhandled JAXBElement object " + element.getDeclaredType());
 				}
@@ -257,6 +265,54 @@ public class DocxReader implements Reader {
 	private void processTab(Tab tab, Column column) {
 		// TODO: check if this should cause a new line to be created
 		column.addContentOffset(TAB_WIDTH - (column.getContentWidth() % TAB_WIDTH));
+	}
+
+	private void processTable(Tbl table, Column column) {
+		List<Integer> columnWidths = new ArrayList<>();
+
+		for (TblGridCol tableColumn : table.getTblGrid().getGridCol()) {
+			columnWidths.add(tableColumn.getW().intValue());
+		}
+
+		for (Object tblObj : table.getContent()) {
+			if (tblObj instanceof Tr) {
+				Tr tableRow = (Tr) tblObj;
+				List<Integer> columnYOffsets = new ArrayList<>();
+				int xOffset = column.getXOffset();
+				int col = 0;
+
+				// Set all columns y-offsets to the same position so they're all in-line
+				for (int i=0; i<columnWidths.size(); i++) {
+					columnYOffsets.add(yOffset);
+				}
+
+				for (Object rowObj : tableRow.getContent()) {
+					if (rowObj instanceof JAXBElement) {
+						JAXBElement<?> element = (JAXBElement<?>) rowObj;
+
+						if (element.getDeclaredType().equals(Tc.class)) {
+							Tc tableCell = (Tc) element.getValue();
+							Column cellColumn = new Column(xOffset, columnWidths.get(col));
+
+							// restore this columns previous y-offset before processing
+							yOffset = columnYOffsets.get(col);
+
+							iterateContentParts(tableCell, cellColumn);
+
+							// remember where this columns content got to
+							columnYOffsets.set(col, yOffset);
+							xOffset += cellColumn.getWidth();
+							++col;
+						}
+					} else {
+						LOG.trace("Unhandled row object " + rowObj.getClass());
+					}
+				}
+
+				// Set the next content that's output to start after the last row 
+				yOffset = columnYOffsets.stream().max(Integer::compare).get();
+			}
+		}
 	}
 
 	private ParagraphStyle getStyleById(ParagraphStyle baseStyle, String styleId) {
