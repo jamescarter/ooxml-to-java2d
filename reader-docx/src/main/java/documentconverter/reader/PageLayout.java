@@ -1,5 +1,8 @@
 package documentconverter.reader;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
+
 public class PageLayout {
 	private int width;
 	private int height;
@@ -39,5 +42,17 @@ public class PageLayout {
 
 	public int getLeftMargin() {
 		return leftMargin;
+	}
+
+	@Override
+	public String toString() {
+		return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
+			.append("width", width)
+			.append("height", height)
+			.append("topMargin", topMargin)
+			.append("rightMargin", rightMargin)
+			.append("bottomMargin", bottomMargin)
+			.append("leftMargin", leftMargin)
+			.toString();
 	}
 }
