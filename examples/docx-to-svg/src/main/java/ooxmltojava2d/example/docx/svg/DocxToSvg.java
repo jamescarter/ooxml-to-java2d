@@ -1,16 +1,12 @@
 package ooxmltojava2d.example.docx.svg;
 
 import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.imageio.ImageIO;
 
 import org.jfree.graphics2d.svg.SVGGraphics2D;
 
