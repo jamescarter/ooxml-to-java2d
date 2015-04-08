@@ -22,6 +22,7 @@ import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.WordprocessingML.BinaryPartAbstractImage;
 import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
+import org.docx4j.wml.Br;
 import org.docx4j.wml.ContentAccessor;
 import org.docx4j.wml.Drawing;
 import org.docx4j.wml.P;
@@ -143,6 +144,8 @@ public class DocxToGraphics2D {
 				}
 			} else if (obj instanceof R) {
 				processTextRun((R) obj, column);
+			} else if (obj instanceof Br) {
+				processBreak((Br) obj, column);
 			} else if (obj instanceof JAXBElement) {
 				JAXBElement<?> element = (JAXBElement<?>) obj;
 
@@ -206,8 +209,8 @@ public class DocxToGraphics2D {
 		return false;
 	}
 
-	private void processTextRun(R r, Column column) {
-		ParagraphStyle newRunStyle = getStyle(paraStyle, r.getRPr());
+	private void processTextRun(R run, Column column) {
+		ParagraphStyle newRunStyle = getStyle(paraStyle, run.getRPr());
 
 		if (runStyle == null || !newRunStyle.getFontConfig().equals(runStyle.getFontConfig())) {
 			column.addAction(newRunStyle.getFontConfig());
@@ -219,7 +222,20 @@ public class DocxToGraphics2D {
 
 		runStyle = newRunStyle;
 
-		iterateContentParts(r, column);
+		iterateContentParts(run, column);
+	}
+
+	private void processBreak(Br br, Column column) {
+		if (br.getType() != null) {
+			switch (br.getType()) {
+				case PAGE:
+					renderActionsForLine(column);
+					createPageFromLayout();
+				break;
+				default:
+					LOG.trace("Unhandled break type " + br.getType());
+			}
+		}
 	}
 
 	private void processText(String text, Column column) {

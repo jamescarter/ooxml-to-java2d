@@ -30,6 +30,7 @@ public class DocxToGraphics2DTest {
 	private static final File TEST_ALIGNMENT = new File("src/test/resources/docx/alignment.docx");
 	private static final File TEST_TABLE_SIMPLE = new File("src/test/resources/docx/table_simple.docx");
 	private static final File TEST_IMAGE_INLINE = new File("src/test/resources/docx/image_inline.docx");
+	private static final File TEST_PAGE_BREAK = new File("src/test/resources/docx/page_break.docx");
 	private MockGraphicsBuilder builder;
 
 	@Before
@@ -347,6 +348,17 @@ public class DocxToGraphics2DTest {
 		DrawStringAction rightText = (DrawStringAction) actions.get(02);
 		assertEquals(" with some text on the other side.", rightText.getText());
 		assertTrue(rightText.getX() > image.getX());
+	}
+
+	@Test
+	public void testPageBreak() throws IOException {
+		new DocxToGraphics2D(builder, TEST_PAGE_BREAK).process();
+
+		List<MockGraphics2D> pages = builder.getPages();
+
+		assertEquals(2, pages.size());
+		assertEquals("Page 1", pages.get(0).getActions(DrawStringAction.class).get(0).getText());
+		assertEquals("Page 2", pages.get(1).getActions(DrawStringAction.class).get(0).getText());
 	}
 
 	private void assertFontAttributes(Font font, Object ... expectedStyles) {
