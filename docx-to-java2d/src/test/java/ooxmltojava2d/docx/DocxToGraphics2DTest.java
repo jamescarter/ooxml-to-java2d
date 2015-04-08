@@ -159,37 +159,40 @@ public class DocxToGraphics2DTest {
 	public void testHeaderStyle() throws IOException {
 		new DocxToGraphics2D(builder, TEST_HEADER_STYLE).process();
 
-		List<Object> actions = builder.getPages().get(0).getActions(Font.class, DrawStringAction.class);
+		List<Object> actions = builder.getPages().get(0).getActions(Font.class, Color.class, DrawStringAction.class);
 
-		Font f1 = (Font) (Font) actions.get(0);
-		Font f2 = (Font) (Font) actions.get(2);
-		Font f3 = (Font) (Font) actions.get(4);
-		Font f4 = (Font) (Font) actions.get(6);
-		Font f5 = (Font) (Font) actions.get(8);
+		Color h3c = (Color) actions.get(11);
+
+		Font f1 = (Font) actions.get(1);		
+		Font f2 = (Font) actions.get(4);
+		Font f3 = (Font) actions.get(6);
+		Font f4 = (Font) actions.get(8);
+		Font f5 = (Font) actions.get(10);
 
 		assertEquals(560, (int) f1.getSize());
 		assertEquals(f1.getStyle(), Font.BOLD);
 		assertEquals("Arial", f1.getName());
-		assertEquals("Title", ((DrawStringAction) actions.get(1)).getText());
+		assertEquals("Title", ((DrawStringAction) actions.get(3)).getText());
 
 		assertEquals(360, (int) f2.getSize());
 		assertEquals("Arial", f2.getName());
-		assertEquals("Subtitle", ((DrawStringAction) actions.get(3)).getText());
+		assertEquals("Subtitle", ((DrawStringAction) actions.get(5)).getText());
 
 		assertEquals(360, (int) f3.getSize());
 		assertEquals("Arial", f3.getName());
 		assertEquals(f3.getStyle(), Font.BOLD);
-		assertEquals("Header 1", ((DrawStringAction) actions.get(5)).getText());
+		assertEquals("Header 1", ((DrawStringAction) actions.get(7)).getText());
 
 		assertEquals(320, (int) f4.getSize());
 		assertEquals("Arial", f4.getName());
 		assertEquals(f4.getStyle(), Font.BOLD);
-		assertEquals("Header 2", ((DrawStringAction) actions.get(7)).getText());
+		assertEquals("Header 2", ((DrawStringAction) actions.get(9)).getText());
 
 		assertEquals(280, (int) f5.getSize());
 		assertEquals("Arial", f5.getName());
 		assertEquals(f5.getStyle(), Font.BOLD);
-		assertEquals("Header 3", ((DrawStringAction) actions.get(9)).getText());
+		assertEquals("Header 3", ((DrawStringAction) actions.get(12)).getText());
+		assertEquals(new Color(128, 128, 128), h3c);
 	}
 
 	@Test

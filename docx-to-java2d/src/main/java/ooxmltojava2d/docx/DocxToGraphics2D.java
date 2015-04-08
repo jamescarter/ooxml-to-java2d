@@ -428,10 +428,9 @@ public class DocxToGraphics2D {
 		}
 
 		// text color
-		Color newColor = Color.BLACK;
-
 		if (runProperties.getColor() != null) {
 			String strColor = runProperties.getColor().getVal();
+			Color newColor;
 
 			if (strColor.equals("auto")) {
 				newColor = Color.BLACK;
@@ -444,9 +443,11 @@ public class DocxToGraphics2D {
 					Integer.valueOf(hex.substring(4, 6), 16)
 				);
 			}
-		}
 
-		newStyle.setColor(newColor);
+			if (!newColor.equals(baseStyle.getColor())) {
+				newStyle.setColor(newColor);
+			}
+		}
 
 		return newStyle;
 	}
