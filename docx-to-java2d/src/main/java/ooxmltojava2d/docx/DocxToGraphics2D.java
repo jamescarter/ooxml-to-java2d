@@ -4,6 +4,8 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayDeque;
@@ -13,12 +15,15 @@ import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.docx4j.dml.wordprocessingDrawing.Inline;
 import org.docx4j.jaxb.XPathBinderAssociationIsPartialException;
 import org.docx4j.model.structure.SectionWrapper;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
+import org.docx4j.openpackaging.parts.WordprocessingML.BinaryPartAbstractImage;
 import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
 import org.docx4j.wml.ContentAccessor;
+import org.docx4j.wml.Drawing;
 import org.docx4j.wml.P;
 import org.docx4j.wml.PPr;
 import org.docx4j.wml.PPrBase.PStyle;
@@ -39,15 +44,18 @@ import org.docx4j.wml.Text;
 import org.docx4j.wml.Tr;
 import org.docx4j.wml.UnderlineEnumeration;
 
+import javax.imageio.ImageIO;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 
 public class DocxToGraphics2D {
 	private static final Logger LOG = Logger.getLogger(DocxToGraphics2D.class);
 	private static final int TAB_WIDTH = 950;
+	private static final int EMU_DIVISOR = 635; // divide emu by this to convert to dxa
 	private GraphicsBuilder builder;
 	private Graphics2D g;
 	private File docx;
+	private WordprocessingMLPackage word;
 	private MainDocumentPart main;
 	private Deque<PageLayout> layouts = new ArrayDeque<>();
 	private PageLayout layout;
@@ -62,8 +70,6 @@ public class DocxToGraphics2D {
 	}
 
 	public void process() throws IOException {
-		WordprocessingMLPackage word;
-
 		try {
 			word = WordprocessingMLPackage.load(docx);
 		} catch (Docx4JException e) {
@@ -146,6 +152,8 @@ public class DocxToGraphics2D {
 					processTab((Tab) element.getValue(), column);
 				} else if (element.getDeclaredType().equals(Tbl.class)) {
 					processTable((Tbl) element.getValue(), column);
+				} else if (element.getDeclaredType().equals(Drawing.class)) {
+					processDrawing((Drawing) element.getValue(), column);
 				} else {
 					LOG.trace("Unhandled JAXBElement object " + element.getDeclaredType());
 				}
@@ -318,6 +326,22 @@ public class DocxToGraphics2D {
 		}
 	}
 
+	private void processDrawing(Drawing drawing, Column column) {
+		for (Object obj : drawing.getAnchorOrInline()) {
+			if (obj instanceof Inline) {
+				Inline inline = (Inline) obj;
+				int width = (int) inline.getExtent().getCx() / EMU_DIVISOR;
+				int height = (int) inline.getExtent().getCy() / EMU_DIVISOR;
+
+				if (!column.canFitContent(width)) {
+					renderActionsForLine(column);
+				}
+				
+				column.addContent(width, height, new DrawImageAction(BinaryPartAbstractImage.getImage(word, inline.getGraphic()), width, height, column.getContentWidth()));
+			}
+		}
+	}
+
 	private ParagraphStyle getStyleById(ParagraphStyle baseStyle, String styleId) {
 		return getStyle(baseStyle, main.getStyleDefinitionsPart().getStyleById(styleId));
 	}
@@ -435,6 +459,23 @@ public class DocxToGraphics2D {
 			} else if (obj instanceof FontConfig) {
 				FontConfig fc = (FontConfig) obj;
 				g.setFont(fc.getFont());
+			} else if (obj instanceof DrawImageAction) {
+				DrawImageAction di = (DrawImageAction) obj;
+
+				try {
+					BufferedImage bi = ImageIO.read(new ByteArrayInputStream(di.getImage()));
+
+					g.drawImage(
+						bi,
+						alignmentOffset + di.getX(),
+						yOffset - di.getHeight(),
+						di.getWidth(),
+						di.getHeight(),
+						null
+					);
+				} catch (IOException ioe) {
+					LOG.error("Error reading image", ioe);
+				}
 			}
 		}
 

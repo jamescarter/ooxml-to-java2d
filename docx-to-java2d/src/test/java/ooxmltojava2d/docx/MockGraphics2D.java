@@ -292,6 +292,8 @@ public class MockGraphics2D extends Graphics2D {
 
 	@Override
 	public boolean drawImage(Image img, int x, int y, int width, int height, ImageObserver observer) {
+		actions.add(new DrawImageAction(null, width, height, x));
+
 		return false;
 	}
 

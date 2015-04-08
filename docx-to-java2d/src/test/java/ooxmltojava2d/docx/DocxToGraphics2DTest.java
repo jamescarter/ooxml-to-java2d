@@ -29,6 +29,7 @@ public class DocxToGraphics2DTest {
 	private static final File TEST_TABBED = new File("src/test/resources/docx/tabbed.docx");
 	private static final File TEST_ALIGNMENT = new File("src/test/resources/docx/alignment.docx");
 	private static final File TEST_TABLE_SIMPLE = new File("src/test/resources/docx/table_simple.docx");
+	private static final File TEST_IMAGE_INLINE = new File("src/test/resources/docx/image_inline.docx");
 	private MockGraphicsBuilder builder;
 
 	@Before
@@ -327,6 +328,25 @@ public class DocxToGraphics2DTest {
 		assertEquals("Row 1 H2", r2c2.getText());
 		assertEquals(r1c1.getX(), r2c1.getX());
 		assertEquals(r2c1.getY(), r2c2.getY());
+	}
+
+	@Test
+	public void testImageInline() throws IOException {
+		new DocxToGraphics2D(builder, TEST_IMAGE_INLINE).process();
+
+		List<Object> actions = builder.getPages().get(0).getActions(DrawStringAction.class, DrawImageAction.class);
+
+		DrawStringAction leftText = (DrawStringAction) actions.get(0);
+		assertEquals("Here is an image ", leftText.getText());
+
+		DrawImageAction image = (DrawImageAction) actions.get(1);
+		assertEquals(713, image.getWidth());
+		assertEquals(540, image.getHeight());
+		assertTrue(image.getX() > leftText.getX());
+
+		DrawStringAction rightText = (DrawStringAction) actions.get(02);
+		assertEquals(" with some text on the other side.", rightText.getText());
+		assertTrue(rightText.getX() > image.getX());
 	}
 
 	private void assertFontAttributes(Font font, Object ... expectedStyles) {
