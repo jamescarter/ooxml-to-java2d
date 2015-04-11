@@ -453,6 +453,11 @@ public class DocxToGraphics2D {
 	}
 
 	private void renderActionsForLine(Column column) {
+		// Check if this line will fit onto the current page, otherwise create a new page
+		if (yOffset + column.getContentHeight() > layout.getHeight() - layout.getBottomMargin()) {
+			createPageFromLayout();
+		}
+
 		yOffset += column.getContentHeight();
 		int alignmentOffset = column.getXOffset();
 

@@ -31,6 +31,7 @@ public class DocxToGraphics2DTest {
 	private static final File TEST_TABLE_SIMPLE = new File("src/test/resources/docx/table_simple.docx");
 	private static final File TEST_IMAGE_INLINE = new File("src/test/resources/docx/image_inline.docx");
 	private static final File TEST_PAGE_BREAK = new File("src/test/resources/docx/page_break.docx");
+	private static final File TEST_PAGE_BREAK_OVERFLOW = new File("src/test/resources/docx/page_break_overflow.docx");
 	private MockGraphicsBuilder builder;
 
 	@Before
@@ -353,6 +354,9 @@ public class DocxToGraphics2DTest {
 		assertTrue(rightText.getX() > image.getX());
 	}
 
+	/*
+	 * Test that a new page is created when an explicit page break is found
+	 */
 	@Test
 	public void testPageBreak() throws IOException {
 		new DocxToGraphics2D(builder, TEST_PAGE_BREAK).process();
@@ -362,6 +366,21 @@ public class DocxToGraphics2DTest {
 		assertEquals(2, pages.size());
 		assertEquals("Page 1", pages.get(0).getActions(DrawStringAction.class).get(0).getText());
 		assertEquals("Page 2", pages.get(1).getActions(DrawStringAction.class).get(0).getText());
+	}
+
+	/*
+	 * Test that a new page is created when the content is too large for the current page
+	 */
+	@Test
+	public void testPageBreakOverflow() throws IOException {
+		new DocxToGraphics2D(builder, TEST_PAGE_BREAK_OVERFLOW).process();
+
+		List<MockGraphics2D> pages = builder.getPages();
+
+		// Check that the second page has the content we're expecting
+		assertEquals(2, pages.size());
+		assertEquals("O", pages.get(1).getActions(DrawStringAction.class).get(0).getText());
+		assertEquals("P", pages.get(1).getActions(DrawStringAction.class).get(1).getText());
 	}
 
 	private void assertFontAttributes(Font font, Object ... expectedStyles) {
