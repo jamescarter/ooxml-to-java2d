@@ -112,6 +112,10 @@ public class DocxToGraphics2D {
 
 		DocDefaults docDef = (DocDefaults) docs.get(0);
 		defaultParaStyle = getStyle(new ParagraphStyle(), docDef.getRPrDefault().getRPr());
+
+		if (main.getStyleDefinitionsPart().getDefaultParagraphStyle() != null) {
+			defaultParaStyle = getStyle(defaultParaStyle, main.getStyleDefinitionsPart().getDefaultParagraphStyle());
+		}
 	}
 
 	private void setPageLayouts(WordprocessingMLPackage word) {
@@ -388,6 +392,10 @@ public class DocxToGraphics2D {
 	}
 
 	private ParagraphStyle getStyle(ParagraphStyle baseStyle, Style style) {
+		if (style == null) {
+			return baseStyle;
+		}
+
 		ParagraphStyle newStyle;
 
 		if (style.getBasedOn() == null) {
@@ -401,7 +409,11 @@ public class DocxToGraphics2D {
 
 			if (spacing != null && spacing.getLine() != null) {
 				newStyle.setLineSpacing(spacing.getLine().intValue());
-				newStyle.setSpaceBefore(spacing.getBefore().intValue());
+
+				if (spacing.getBefore() != null) {
+					newStyle.setSpaceBefore(spacing.getBefore().intValue());
+				}
+
 				newStyle.setSpaceAfter(spacing.getAfter().intValue());
 			}
 		}
@@ -418,12 +430,19 @@ public class DocxToGraphics2D {
 
 		// font
 		if (runProperties.getRFonts() != null) {
-			newStyle.setFontName(runProperties.getRFonts().getAscii());
+			if (runProperties.getRFonts().getAscii() != null) {
+				newStyle.setFontName(runProperties.getRFonts().getAscii());
+			}
 		}
 
 		// font size
 		if (runProperties.getSz() != null) {
 			float sizePt = runProperties.getSz().getVal().floatValue() / 2;
+
+			// scale by a factor of 20 for trips units
+			newStyle.setFontSize(sizePt * 20);
+		} else if (runProperties.getSzCs() != null) {
+			float sizePt = runProperties.getSzCs().getVal().floatValue() / 2;
 
 			// scale by a factor of 20 for trips units
 			newStyle.setFontSize(sizePt * 20);

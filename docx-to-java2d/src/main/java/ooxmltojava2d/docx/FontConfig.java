@@ -27,6 +27,8 @@ import java.util.Set;
 
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 
 public class FontConfig {
 	private Font font = new Font(Font.SERIF, Font.PLAIN, 1);
@@ -116,7 +118,7 @@ public class FontConfig {
 
 	@Override
 	public int hashCode() {
-		return new HashCodeBuilder(31, 16)
+		return new HashCodeBuilder(31, 15)
 			.append(name)
 			.append(size)
 			.append(styles)
@@ -140,5 +142,14 @@ public class FontConfig {
 			.append(size, fc.size)
 			.append(styles, fc.styles)
 			.isEquals();
+	}
+
+	@Override
+	public String toString() {
+		return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
+			.append("name", name)
+			.append("size", size)
+			.append("styles", styles)
+			.toString();
 	}
 }

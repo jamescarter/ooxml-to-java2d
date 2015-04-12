@@ -19,6 +19,9 @@ package ooxmltojava2d.docx;
 import java.awt.Color;
 import java.awt.geom.Rectangle2D;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
+
 public class ParagraphStyle {
 	private int lineSpacing;
 	private int spaceBefore;
@@ -96,5 +99,17 @@ public class ParagraphStyle {
 
 	public Rectangle2D getStringBoxSize(String text) {
 		return fontConfig.getStringBoxSize(text);
+	}
+
+	@Override
+	public String toString() {
+		return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
+			.append("lineSpacing", lineSpacing)
+			.append("spaceBefore", spaceBefore)
+			.append("spaceAfter", spaceAfter)
+			.append("color", color)
+			.append("fontConfig", fontConfig)
+			.append("alignment", alignment)
+			.toString();
 	}
 }
