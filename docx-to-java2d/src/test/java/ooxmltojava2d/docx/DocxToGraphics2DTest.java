@@ -46,6 +46,7 @@ public class DocxToGraphics2DTest {
 	private static final File TEST_ALIGNMENT = new File("src/test/resources/docx/alignment.docx");
 	private static final File TEST_TABLE_SIMPLE = new File("src/test/resources/docx/table_simple.docx");
 	private static final File TEST_IMAGE_INLINE = new File("src/test/resources/docx/image_inline.docx");
+	private static final File TEST_EMPTY_PARAGRAPH = new File("src/test/resources/docx/empty_paragraph.docx");
 	private static final File TEST_PAGE_BREAK = new File("src/test/resources/docx/page_break.docx");
 	private static final File TEST_PAGE_BREAK_OVERFLOW = new File("src/test/resources/docx/page_break_overflow.docx");
 	private MockGraphicsBuilder builder;
@@ -368,6 +369,26 @@ public class DocxToGraphics2DTest {
 		DrawStringAction rightText = (DrawStringAction) actions.get(02);
 		assertEquals(" with some text on the other side.", rightText.getText());
 		assertTrue(rightText.getX() > image.getX());
+	}
+
+	@Test
+	public void testEmptyParagraph() throws IOException {
+		new DocxToGraphics2D(builder, TEST_EMPTY_PARAGRAPH).process();
+
+		List<DrawStringAction> actions = builder.getPages().get(0).getActions(DrawStringAction.class);
+
+		DrawStringAction ds1 = actions.get(0);
+		DrawStringAction ds2 = actions.get(1);
+		DrawStringAction ds3 = actions.get(2);
+
+		assertEquals("Paragraph 1", ds1.getText());
+		int y = ds1.getY();
+
+		assertEquals("Paragraph 3", ds2.getText());
+		assertEquals(y += 550, ds2.getY());
+
+		assertEquals("Paragraph 6", ds3.getText());
+		assertEquals(y += 825, ds3.getY());
 	}
 
 	/*

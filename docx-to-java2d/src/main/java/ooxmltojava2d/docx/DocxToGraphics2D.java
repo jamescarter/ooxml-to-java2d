@@ -211,7 +211,12 @@ public class DocxToGraphics2D {
 		yOffset += newParaStyle.getSpaceBefore();
 		paraStyle = newParaStyle;
 
-		iterateContentParts(p, column);
+		if (p.getContent().size() == 0) {
+			yOffset += paraStyle.getStringBoxSize("").getHeight();
+		} else {
+			iterateContentParts(p, column);
+		}
+
 		renderActionsForLine(column);
 
 		yOffset += paraStyle.getSpaceAfter();
@@ -238,7 +243,11 @@ public class DocxToGraphics2D {
 
 		runStyle = newRunStyle;
 
-		iterateContentParts(run, column);
+		if (run.getRPr() != null && run.getContent().size() == 0) {
+			yOffset += paraStyle.getStringBoxSize("").getHeight();
+		} else {
+			iterateContentParts(run, column);
+		}
 	}
 
 	private void processBreak(Br br, Column column) {
