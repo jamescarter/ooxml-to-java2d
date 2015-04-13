@@ -272,7 +272,10 @@ public class DocxToGraphics2D {
 	}
 
 	private void processBreak(Br br, Column column) {
-		if (br.getType() != null) {
+		if (br.getType() == null) {
+			// paragraph break
+			renderActionsForLine(column);
+		} else {
 			switch (br.getType()) {
 				case PAGE:
 					renderActionsForLine(column);

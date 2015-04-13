@@ -51,6 +51,7 @@ public class DocxToGraphics2DTest {
 	private static final File TEST_EMPTY_PARAGRAPH = new File("src/test/resources/docx/empty_paragraph.docx");
 	private static final File TEST_PAGE_BREAK = new File("src/test/resources/docx/page_break.docx");
 	private static final File TEST_PAGE_BREAK_OVERFLOW = new File("src/test/resources/docx/page_break_overflow.docx");
+	private static final File TEST_PARAGRAPH_BREAK = new File("src/test/resources/docx/paragraph_break.docx");
 	private MockGraphicsBuilder builder;
 
 	@Before
@@ -461,6 +462,23 @@ public class DocxToGraphics2DTest {
 		assertEquals(2, pages.size());
 		assertEquals("O", pages.get(1).getActions(DrawStringAction.class).get(0).getText());
 		assertEquals("P", pages.get(1).getActions(DrawStringAction.class).get(1).getText());
+	}
+
+	/*
+	 * Test that a paragraph break moves the following content to the next line
+	 */
+	@Test
+	public void testParagraphBreak() throws IOException {
+		new DocxToGraphics2D(builder, TEST_PARAGRAPH_BREAK).process();
+
+		List<DrawStringAction> actions = builder.getPages().get(0).getActions(DrawStringAction.class);
+
+		DrawStringAction hello = actions.get(0);
+		DrawStringAction world = actions.get(1);
+
+		assertEquals("Hello", hello.getText());
+		assertEquals("World", world.getText());
+		assertTrue(hello.getY() < world.getY());
 	}
 
 	private void assertFontAttributes(Font font, Object ... expectedStyles) {
