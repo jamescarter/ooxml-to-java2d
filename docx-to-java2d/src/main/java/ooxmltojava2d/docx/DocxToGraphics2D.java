@@ -37,6 +37,7 @@ import org.docx4j.model.structure.SectionWrapper;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.WordprocessingML.BinaryPartAbstractImage;
+import org.docx4j.openpackaging.parts.WordprocessingML.HeaderPart;
 import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
 import org.docx4j.wml.Br;
 import org.docx4j.wml.ContentAccessor;
@@ -119,15 +120,16 @@ public class DocxToGraphics2D {
 	}
 
 	private void setPageLayouts(WordprocessingMLPackage word) {
-		for (SectionWrapper section : word.getDocumentModel().getSections()) {
-			// TODO: support header and footers - section.getHeaderFooterPolicy()
-			layouts.add(createPageLayout(section.getSectPr()));
+		for (SectionWrapper sw : word.getDocumentModel().getSections()) {
+			layouts.add(createPageLayout(sw));
 		}
 	}
 
-	private PageLayout createPageLayout(SectPr sectPr) {
+	private PageLayout createPageLayout(SectionWrapper sw) {
+		SectPr sectPr = sw.getSectPr();
 		PgSz size = sectPr.getPgSz();
 		PgMar margin = sectPr.getPgMar();
+		HeaderPart header = sw.getHeaderFooterPolicy().getDefaultHeader();
 
 		return new PageLayout(
 			size.getW().intValue(),
@@ -135,7 +137,9 @@ public class DocxToGraphics2D {
 			margin.getTop().intValue(),
 			margin.getRight().intValue(),
 			margin.getBottom().intValue(),
-			margin.getLeft().intValue()
+			margin.getLeft().intValue(),
+			margin.getHeader().intValue(),
+			header
 		);
 	}
 
@@ -148,10 +152,16 @@ public class DocxToGraphics2D {
 		g = builder.nextPage(layout.getWidth(), layout.getHeight());
 		g.setBackground(Color.WHITE);
 		g.clearRect(0, 0, layout.getWidth(), layout.getHeight());
-		g.setColor(Color.BLACK);
+		g.setColor(Color.BLACK);	
 		g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
 		g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
 		g.setRenderingHint(RenderingHints.KEY_TEXT_LCD_CONTRAST, 250);
+
+		if (layout.getHeader() != null) {
+			yOffset = layout.getHeaderMargin();
+
+			iterateContentParts(layout.getHeader(), new Column(layout.getLeftMargin(), layout.getWidth()));
+		}
 
 		yOffset = layout.getTopMargin();
 	}

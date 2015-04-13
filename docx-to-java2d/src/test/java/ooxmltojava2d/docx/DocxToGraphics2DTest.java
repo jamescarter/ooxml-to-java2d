@@ -35,6 +35,7 @@ import org.junit.Test;
 public class DocxToGraphics2DTest {
 	private static final File TEST_FILE_LAYOUTS = new File("src/test/resources/docx/layouts.docx");
 	private static final File TEST_FILE_BODY_START_NO_HEADER = new File("src/test/resources/docx/body_start_no_header.docx");
+	private static final File TEST_HEADER = new File("src/test/resources/docx/header.docx");
 	private static final File TEST_FONT_SIZE = new File("src/test/resources/docx/font_size.docx");
 	private static final File TEST_FONT_STYLE = new File("src/test/resources/docx/font_style.docx");
 	private static final File TEST_LINE_HEIGHT = new File("src/test/resources/docx/line_height.docx");
@@ -89,6 +90,37 @@ public class DocxToGraphics2DTest {
 
 		assertEquals("DrawStringAction[text=Hello, World!,x=1440,y=1708]", page1Action.toString());
 		assertEquals("DrawStringAction[text=Hello, World!,x=1134,y=1969]", page2Action.toString());
+	}
+
+	@Test
+	public void testHeader() throws IOException {
+		new DocxToGraphics2D(builder, TEST_HEADER).process();
+
+		List<DrawStringAction> actions = builder.getPages().get(0).getActions(DrawStringAction.class);
+		DrawStringAction a = actions.get(0);
+		DrawStringAction b = actions.get(1);
+		DrawStringAction c = actions.get(2);
+		DrawStringAction d = actions.get(3);
+		DrawStringAction e = actions.get(4);
+		DrawStringAction f = actions.get(5);
+
+		assertEquals("A", a.getText());
+		assertEquals(1409, a.getY());
+
+		assertEquals("B", b.getText());
+		assertEquals(1684, b.getY());
+
+		assertEquals("C", c.getText());
+		assertEquals(1959, c.getY());
+
+		assertEquals("D", d.getText());
+		assertEquals(2520, d.getY());
+
+		assertEquals("E", e.getText());
+		assertEquals(2795, e.getY());
+
+		assertEquals("F", f.getText());
+		assertEquals(3070, f.getY());
 	}
 
 	@Test

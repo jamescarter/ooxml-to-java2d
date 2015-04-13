@@ -18,6 +18,7 @@ package ooxmltojava2d.docx;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
+import org.docx4j.openpackaging.parts.WordprocessingML.HeaderPart;
 
 public class PageLayout {
 	private int width;
@@ -26,14 +27,21 @@ public class PageLayout {
 	private int rightMargin;
 	private int bottomMargin;
 	private int leftMargin;
+	private int headerMargin;
+	private HeaderPart header;
 
-	public PageLayout(int width, int height, int topMargin, int rightMargin, int bottomMargin, int leftMargin) {
+	public PageLayout(
+		int width, int height, int topMargin, int rightMargin, int bottomMargin,
+		int leftMargin, int headerMargin, HeaderPart header
+	) {
 		this.width = width;
 		this.height = height;
 		this.topMargin = topMargin;
 		this.rightMargin = rightMargin;
 		this.bottomMargin = bottomMargin;
 		this.leftMargin = leftMargin;
+		this.headerMargin = headerMargin;
+		this.header = header;
 	}
 
 	public int getWidth() {
@@ -60,6 +68,14 @@ public class PageLayout {
 		return leftMargin;
 	}
 
+	public int getHeaderMargin() {
+		return headerMargin;
+	}
+
+	public HeaderPart getHeader() {
+		return header;
+	}
+
 	@Override
 	public String toString() {
 		return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
@@ -69,6 +85,7 @@ public class PageLayout {
 			.append("rightMargin", rightMargin)
 			.append("bottomMargin", bottomMargin)
 			.append("leftMargin", leftMargin)
+			.append("headerMargin", headerMargin)
 			.toString();
 	}
 }
