@@ -31,14 +31,18 @@ import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.docx4j.dml.CTPositiveSize2D;
+import org.docx4j.dml.Graphic;
+import org.docx4j.dml.wordprocessingDrawing.Anchor;
 import org.docx4j.dml.wordprocessingDrawing.Inline;
 import org.docx4j.jaxb.XPathBinderAssociationIsPartialException;
 import org.docx4j.model.structure.SectionWrapper;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
-import org.docx4j.openpackaging.parts.WordprocessingML.BinaryPartAbstractImage;
+import org.docx4j.openpackaging.parts.WordprocessingML.BinaryPart;
 import org.docx4j.openpackaging.parts.WordprocessingML.HeaderPart;
 import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
+import org.docx4j.openpackaging.parts.relationships.RelationshipsPart;
 import org.docx4j.wml.Br;
 import org.docx4j.wml.ContentAccessor;
 import org.docx4j.wml.Drawing;
@@ -81,6 +85,7 @@ public class DocxToGraphics2D {
 	private ParagraphStyle defaultParaStyle;
 	private ParagraphStyle paraStyle;
 	private ParagraphStyle runStyle;
+	private RelationshipsPart relPart;
 
 	public DocxToGraphics2D(GraphicsBuilder builder, File docx) {
 		this.builder = builder;
@@ -160,9 +165,11 @@ public class DocxToGraphics2D {
 		if (layout.getHeader() != null) {
 			yOffset = layout.getHeaderMargin();
 
+			relPart = layout.getHeader().getRelationshipsPart();
 			iterateContentParts(layout.getHeader(), new Column(layout.getLeftMargin(), layout.getWidth()));
 		}
 
+		relPart = main.getRelationshipsPart();
 		yOffset = layout.getTopMargin();
 	}
 
@@ -188,10 +195,10 @@ public class DocxToGraphics2D {
 				} else if (element.getDeclaredType().equals(Drawing.class)) {
 					processDrawing((Drawing) element.getValue(), column);
 				} else {
-					LOG.trace("Unhandled JAXBElement object " + element.getDeclaredType());
+					LOG.debug("Unhandled JAXBElement object " + element.getDeclaredType());
 				}
 			} else {
-				LOG.trace("Unhandled document object " + obj.getClass());
+				LOG.debug("Unhandled document object " + obj.getClass());
 			}
 		}
 	}
@@ -272,7 +279,7 @@ public class DocxToGraphics2D {
 					createPageFromLayout();
 				break;
 				default:
-					LOG.trace("Unhandled break type " + br.getType());
+					LOG.debug("Unhandled break type " + br.getType());
 			}
 		}
 	}
@@ -371,7 +378,7 @@ public class DocxToGraphics2D {
 							++col;
 						}
 					} else {
-						LOG.trace("Unhandled row object " + rowObj.getClass());
+						LOG.debug("Unhandled row object " + rowObj.getClass());
 					}
 				}
 
@@ -385,16 +392,27 @@ public class DocxToGraphics2D {
 		for (Object obj : drawing.getAnchorOrInline()) {
 			if (obj instanceof Inline) {
 				Inline inline = (Inline) obj;
-				int width = (int) inline.getExtent().getCx() / EMU_DIVISOR;
-				int height = (int) inline.getExtent().getCy() / EMU_DIVISOR;
-
-				if (!column.canFitContent(width)) {
-					renderActionsForLine(column);
-				}
-				
-				column.addContent(width, height, new DrawImageAction(BinaryPartAbstractImage.getImage(word, inline.getGraphic()), width, height, column.getContentWidth()));
+				processGraphic(inline.getExtent(), inline.getGraphic(), column);
+			} else if (obj instanceof Anchor) {
+				Anchor anchor = (Anchor) obj;
+				processGraphic(anchor.getExtent(), anchor.getGraphic(), column);
+			} else {
+				LOG.debug("Unhandled drawing object " + obj.getClass());
 			}
 		}
+	}
+
+	private void processGraphic(CTPositiveSize2D extent, Graphic graphic, Column column) {
+		int width = (int) extent.getCx() / EMU_DIVISOR;
+		int height = (int) extent.getCy() / EMU_DIVISOR;
+
+		if (!column.canFitContent(width)) {
+			renderActionsForLine(column);
+		}
+
+		String rId = graphic.getGraphicData().getPic().getBlipFill().getBlip().getEmbed();
+
+		column.addContent(width, height, new DrawImageAction(rId, width, height, column.getContentWidth()));
 	}
 
 	private ParagraphStyle getStyleById(ParagraphStyle baseStyle, String styleId) {
@@ -528,8 +546,8 @@ public class DocxToGraphics2D {
 
 		for (Object obj : column.getActions()) {
 			if (obj instanceof DrawStringAction) {
-				DrawStringAction dsa = (DrawStringAction) obj;
-				g.drawString(dsa.getText(), alignmentOffset + dsa.getX(), yOffset);
+				DrawStringAction ds = (DrawStringAction) obj;
+				g.drawString(ds.getText(), alignmentOffset + ds.getX(), yOffset);
 			} else if (obj instanceof Color) {
 				g.setColor(((Color) obj));
 			} else if (obj instanceof FontConfig) {
@@ -539,7 +557,7 @@ public class DocxToGraphics2D {
 				DrawImageAction di = (DrawImageAction) obj;
 
 				try {
-					BufferedImage bi = ImageIO.read(new ByteArrayInputStream(di.getImage()));
+					BufferedImage bi = getImage(di.getRelationshipId());
 
 					g.drawImage(
 						bi,
@@ -556,5 +574,11 @@ public class DocxToGraphics2D {
 		}
 
 		column.reset();
+	}
+
+	private BufferedImage getImage(String relationshipId) throws IOException {
+		BinaryPart binary = (BinaryPart) relPart.getPart(relationshipId);
+
+		return ImageIO.read(new ByteArrayInputStream(binary.getBytes()));
 	}
 }

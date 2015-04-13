@@ -17,20 +17,20 @@
 package ooxmltojava2d.docx;
 
 public class DrawImageAction {
-	private byte[] image;
+	private String relationshipId;
 	private int width;
 	private int height;
 	private int x;
 
-	public DrawImageAction(byte[] image, int width, int height, int x) {
-		this.image = image;
+	public DrawImageAction(String relationshipId, int width, int height, int x) {
+		this.relationshipId = relationshipId;
 		this.width = width;
 		this.height = height;
 		this.x = x;
 	}
 
-	public byte[] getImage() {
-		return image;
+	public String getRelationshipId() {
+		return relationshipId;
 	}
 
 	public int getX() {

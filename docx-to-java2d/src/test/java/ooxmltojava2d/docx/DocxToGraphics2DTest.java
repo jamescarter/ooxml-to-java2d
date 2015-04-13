@@ -47,6 +47,7 @@ public class DocxToGraphics2DTest {
 	private static final File TEST_ALIGNMENT = new File("src/test/resources/docx/alignment.docx");
 	private static final File TEST_TABLE_SIMPLE = new File("src/test/resources/docx/table_simple.docx");
 	private static final File TEST_IMAGE_INLINE = new File("src/test/resources/docx/image_inline.docx");
+	private static final File TEST_IMAGE_ANCHOR = new File("src/test/resources/docx/image_anchor.docx");
 	private static final File TEST_EMPTY_PARAGRAPH = new File("src/test/resources/docx/empty_paragraph.docx");
 	private static final File TEST_PAGE_BREAK = new File("src/test/resources/docx/page_break.docx");
 	private static final File TEST_PAGE_BREAK_OVERFLOW = new File("src/test/resources/docx/page_break_overflow.docx");
@@ -401,6 +402,16 @@ public class DocxToGraphics2DTest {
 		DrawStringAction rightText = (DrawStringAction) actions.get(02);
 		assertEquals(" with some text on the other side.", rightText.getText());
 		assertTrue(rightText.getX() > image.getX());
+	}
+
+	@Test
+	public void testImageAnchor() throws IOException {
+		new DocxToGraphics2D(builder, TEST_IMAGE_ANCHOR).process();
+
+		List<DrawImageAction> actions = builder.getPages().get(0).getActions(DrawImageAction.class);
+		DrawImageAction di = actions.get(0);
+		assertEquals(713, di.getWidth());
+		assertEquals(540, di.getHeight());
 	}
 
 	@Test
