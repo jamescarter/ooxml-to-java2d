@@ -16,6 +16,9 @@
 
 package ooxmltojava2d.docx;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
+
 public class DrawImageAction {
 	private String relationshipId;
 	private int width;
@@ -43,5 +46,15 @@ public class DrawImageAction {
 
 	public int getHeight() {
 		return height;
+	}
+
+	@Override
+	public String toString() {
+		return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
+			.append("relationshipId", relationshipId)
+			.append("x", x)
+			.append("width", width)
+			.append("height", height)
+			.toString();
 	}
 }

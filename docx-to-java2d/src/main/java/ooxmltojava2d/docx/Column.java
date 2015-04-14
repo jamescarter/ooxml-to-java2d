@@ -97,6 +97,7 @@ public class Column {
 			.append("width", width)
 			.append("contentWidth", contentWidth)
 			.append("contentHeight", contentHeight)
+			.append("actions", actions)
 			.toString();
 	}
 }
