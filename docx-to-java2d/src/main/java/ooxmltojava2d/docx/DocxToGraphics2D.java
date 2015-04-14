@@ -438,14 +438,18 @@ public class DocxToGraphics2D {
 		if (style.getPPr() != null) {
 			Spacing spacing = style.getPPr().getSpacing();
 
-			if (spacing != null && spacing.getLine() != null) {
-				newStyle.setLineSpacing(spacing.getLine().intValue());
+			if (spacing != null) {
+				if (spacing.getLine() != null) {
+					newStyle.setLineSpacing(spacing.getLine().intValue());
+				}
 
 				if (spacing.getBefore() != null) {
 					newStyle.setSpaceBefore(spacing.getBefore().intValue());
 				}
 
-				newStyle.setSpaceAfter(spacing.getAfter().intValue());
+				if (spacing.getAfter() != null) {
+					newStyle.setSpaceAfter(spacing.getAfter().intValue());
+				}
 			}
 		}
 
