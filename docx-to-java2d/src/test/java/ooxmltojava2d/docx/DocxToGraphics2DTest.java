@@ -46,6 +46,7 @@ public class DocxToGraphics2DTest {
 	private static final File TEST_TABBED = new File("src/test/resources/docx/tabbed.docx");
 	private static final File TEST_ALIGNMENT = new File("src/test/resources/docx/alignment.docx");
 	private static final File TEST_TABLE_SIMPLE = new File("src/test/resources/docx/table_simple.docx");
+	private static final File TEST_TABLE_MERGE_HORIZONTAL = new File("src/test/resources/docx/table_merge_horizontal.docx");
 	private static final File TEST_IMAGE_INLINE = new File("src/test/resources/docx/image_inline.docx");
 	private static final File TEST_IMAGE_ANCHOR = new File("src/test/resources/docx/image_anchor.docx");
 	private static final File TEST_EMPTY_PARAGRAPH = new File("src/test/resources/docx/empty_paragraph.docx");
@@ -384,6 +385,44 @@ public class DocxToGraphics2DTest {
 		assertEquals("Row 1 H2", r2c2.getText());
 		assertEquals(r1c1.getX(), r2c1.getX());
 		assertEquals(r2c1.getY(), r2c2.getY());
+	}
+
+	@Test
+	public void testTableMergeHorizontal() throws IOException {
+		new DocxToGraphics2D(builder, TEST_TABLE_MERGE_HORIZONTAL).process();
+
+		List<DrawStringAction> actions = builder.getPages().get(0).getActions(DrawStringAction.class);
+
+		// row 1
+		DrawStringAction a1 = actions.get(0);
+		assertEquals("A1", a1.getText());
+
+		DrawStringAction b1c1 = actions.get(1);
+		assertEquals("B1C1_Merge", b1c1.getText());
+		assertTrue(b1c1.getX() > a1.getX());
+
+		DrawStringAction d1 = actions.get(2);
+		assertEquals("D1", d1.getText());
+		assertTrue(d1.getX() > b1c1.getX());
+
+		DrawStringAction e1 = actions.get(3);
+		assertEquals("E1", e1.getText());
+		assertTrue(e1.getX() > d1.getX());
+
+		// row 2
+		DrawStringAction a2b2 = actions.get(4);
+		assertEquals("A2B2_Merge", a2b2.getText());
+		assertEquals(a1.getX(), a2b2.getX());
+
+		DrawStringAction c2d2 = actions.get(5);
+		assertEquals("C2D2_Merge", c2d2.getText());
+		assertTrue(c2d2.getX() > a2b2.getX());
+		assertTrue(c2d2.getX() > b1c1.getX());
+
+		DrawStringAction e2 = actions.get(6);
+		assertEquals("E2", e2.getText());
+		assertEquals(e1.getX(), e2.getX());
+		assertTrue(e2.getX() > c2d2.getX());
 	}
 
 	@Test

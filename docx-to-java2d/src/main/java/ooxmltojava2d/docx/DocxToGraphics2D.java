@@ -368,7 +368,19 @@ public class DocxToGraphics2D {
 
 						if (element.getDeclaredType().equals(Tc.class)) {
 							Tc tableCell = (Tc) element.getValue();
-							Column cellColumn = new Column(xOffset, columnWidths.get(col));
+							int width = columnWidths.get(col);
+
+							// Horizontal cell merge
+							if (tableCell.getTcPr().getGridSpan() != null) {
+								int mergeCols = tableCell.getTcPr().getGridSpan().getVal().intValue();
+								width = columnWidths.get(col);
+
+								for (int i=0; i<mergeCols-1; i++) {
+									width += columnWidths.get(++col);
+								}
+							}
+
+							Column cellColumn = new Column(xOffset, width);
 
 							// restore this columns previous y-offset before processing
 							yOffset = columnYOffsets.get(col);
