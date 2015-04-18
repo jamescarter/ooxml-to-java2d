@@ -36,6 +36,7 @@ public class DocxToGraphics2DTest {
 	private static final File TEST_FILE_LAYOUTS = new File("src/test/resources/docx/layouts.docx");
 	private static final File TEST_FILE_BODY_START_NO_HEADER = new File("src/test/resources/docx/body_start_no_header.docx");
 	private static final File TEST_HEADER = new File("src/test/resources/docx/header.docx");
+	private static final File TEST_HEADER_FIRST_EVEN_ODD = new File("src/test/resources/docx/header_first_even_odd.docx");
 	private static final File TEST_FONT_SIZE = new File("src/test/resources/docx/font_size.docx");
 	private static final File TEST_FONT_STYLE = new File("src/test/resources/docx/font_style.docx");
 	private static final File TEST_LINE_HEIGHT = new File("src/test/resources/docx/line_height.docx");
@@ -124,6 +125,20 @@ public class DocxToGraphics2DTest {
 
 		assertEquals("F", f.getText());
 		assertEquals(3070, f.getY());
+	}
+
+	@Test
+	public void testHeaderFirstEvenOdd() throws IOException {
+		new DocxToGraphics2D(builder, TEST_HEADER_FIRST_EVEN_ODD).process();
+
+		List<MockGraphics2D> pages = builder.getPages();
+		DrawStringAction p1Header = pages.get(0).getActions(DrawStringAction.class).get(0);
+		DrawStringAction p2Header = pages.get(1).getActions(DrawStringAction.class).get(0);
+		DrawStringAction p3Header = pages.get(2).getActions(DrawStringAction.class).get(0);
+
+		assertEquals("First", p1Header.getText());
+		assertEquals("Even", p2Header.getText());
+		assertEquals("Odd", p3Header.getText());
 	}
 
 	@Test

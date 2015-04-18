@@ -81,6 +81,7 @@ public class DocxToGraphics2D {
 	private MainDocumentPart main;
 	private Deque<PageLayout> layouts = new ArrayDeque<>();
 	private PageLayout layout;
+	private int page = 1;
 	private int yOffset;
 	private ParagraphStyle defaultParaStyle;
 	private ParagraphStyle paraStyle;
@@ -134,7 +135,6 @@ public class DocxToGraphics2D {
 		SectPr sectPr = sw.getSectPr();
 		PgSz size = sectPr.getPgSz();
 		PgMar margin = sectPr.getPgMar();
-		HeaderPart header = sw.getHeaderFooterPolicy().getDefaultHeader();
 
 		return new PageLayout(
 			size.getW().intValue(),
@@ -144,7 +144,7 @@ public class DocxToGraphics2D {
 			margin.getBottom().intValue(),
 			margin.getLeft().intValue(),
 			margin.getHeader().intValue(),
-			header
+			sw.getHeaderFooterPolicy()
 		);
 	}
 
@@ -162,13 +162,28 @@ public class DocxToGraphics2D {
 		g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
 		g.setRenderingHint(RenderingHints.KEY_TEXT_LCD_CONTRAST, 250);
 
-		if (layout.getHeader() != null) {
-			yOffset = layout.getHeaderMargin();
+		HeaderPart header = null;
 
-			relPart = layout.getHeader().getRelationshipsPart();
-			iterateContentParts(layout.getHeader(), new Column(layout.getLeftMargin(), layout.getWidth()));
+		if (page == 1) {
+			header = layout.getHeaderFooterPolicy().getFirstHeader();
 		}
 
+		if (header == null) {
+			header = layout.getHeaderFooterPolicy().getHeader(page);
+		}
+
+		if (header == null) {
+			header = layout.getHeaderFooterPolicy().getDefaultHeader();
+		}
+
+		if (header != null) {
+			yOffset = layout.getHeaderMargin();
+			relPart = header.getRelationshipsPart();
+
+			iterateContentParts(header, new Column(layout.getLeftMargin(), layout.getWidth()));
+		}
+
+		++page;
 		relPart = main.getRelationshipsPart();
 		yOffset = layout.getTopMargin();
 	}

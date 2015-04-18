@@ -18,7 +18,7 @@ package ooxmltojava2d.docx;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
-import org.docx4j.openpackaging.parts.WordprocessingML.HeaderPart;
+import org.docx4j.model.structure.HeaderFooterPolicy;
 
 public class PageLayout {
 	private int width;
@@ -28,11 +28,11 @@ public class PageLayout {
 	private int bottomMargin;
 	private int leftMargin;
 	private int headerMargin;
-	private HeaderPart header;
+	private HeaderFooterPolicy headerFooterPolicy;
 
 	public PageLayout(
 		int width, int height, int topMargin, int rightMargin, int bottomMargin,
-		int leftMargin, int headerMargin, HeaderPart header
+		int leftMargin, int headerMargin, HeaderFooterPolicy headerFooterPolicy
 	) {
 		this.width = width;
 		this.height = height;
@@ -41,7 +41,7 @@ public class PageLayout {
 		this.bottomMargin = bottomMargin;
 		this.leftMargin = leftMargin;
 		this.headerMargin = headerMargin;
-		this.header = header;
+		this.headerFooterPolicy = headerFooterPolicy;
 	}
 
 	public int getWidth() {
@@ -72,8 +72,8 @@ public class PageLayout {
 		return headerMargin;
 	}
 
-	public HeaderPart getHeader() {
-		return header;
+	public HeaderFooterPolicy getHeaderFooterPolicy() {
+		return headerFooterPolicy;
 	}
 
 	@Override
