@@ -45,6 +45,7 @@ public class DocxToGraphics2DTest {
 	private static final File TEST_WORD_WRAP = new File("src/test/resources/docx/word_wrap.docx");
 	private static final File TEST_WORD_WRAP_CONTINUOUS = new File("src/test/resources/docx/word_wrap_continuous.docx");
 	private static final File TEST_TABBED = new File("src/test/resources/docx/tabbed.docx");
+	private static final File TEST_TABBED2 = new File("src/test/resources/docx/tabbed2.docx");
 	private static final File TEST_ALIGNMENT = new File("src/test/resources/docx/alignment.docx");
 	private static final File TEST_TABLE_SIMPLE = new File("src/test/resources/docx/table_simple.docx");
 	private static final File TEST_TABLE_MERGE_HORIZONTAL = new File("src/test/resources/docx/table_merge_horizontal.docx");
@@ -354,6 +355,37 @@ public class DocxToGraphics2DTest {
 		assertEquals("R2C3", r2c3.getText());
 		assertEquals(c3.getX(), r2c3.getX());
 		assertTrue(r2c3.getX() > r2c2.getX());
+	}
+
+	@Test
+	public void testTabbed2() throws IOException {
+		new DocxToGraphics2D(builder, TEST_TABBED2).process();
+
+		List<DrawStringAction> actions = builder.getPages().get(0).getActions(DrawStringAction.class);
+
+		DrawStringAction c1 = actions.get(0);
+		assertEquals("Column 1", c1.getText());
+
+		DrawStringAction c2 = actions.get(1);
+		assertEquals("Column 2", c2.getText());
+		assertTrue(c2.getX() > c1.getX());
+
+		// Test all rows in Column B are aligned
+		DrawStringAction r1c2 = actions.get(3);
+		assertEquals("B", r1c2.getText());
+		assertEquals(c2.getX(), r1c2.getX());
+
+		DrawStringAction r2c2 = actions.get(5);
+		assertEquals("B", r2c2.getText());
+		assertEquals(c2.getX(), r2c2.getX());
+
+		DrawStringAction r3c2 = actions.get(7);
+		assertEquals("B", r3c2.getText());
+		assertEquals(c2.getX(), r3c2.getX());
+
+		DrawStringAction r4c2 = actions.get(9);
+		assertEquals("B", r4c2.getText());
+		assertEquals(c2.getX(), r4c2.getX());
 	}
 
 	@Test

@@ -72,7 +72,7 @@ import javax.xml.bind.JAXBException;
 
 public class DocxToGraphics2D {
 	private static final Logger LOG = Logger.getLogger(DocxToGraphics2D.class);
-	private static final int TAB_WIDTH = 950;
+	private static final int TAB_WIDTH = 712;
 	private static final int EMU_DIVISOR = 635; // divide emu by this to convert to dxa
 	private GraphicsBuilder builder;
 	private Graphics2D g;
