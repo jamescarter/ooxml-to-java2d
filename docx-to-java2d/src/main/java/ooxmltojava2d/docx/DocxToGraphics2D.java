@@ -346,10 +346,19 @@ public class DocxToGraphics2D {
 			}
 
 			bounds = runStyle.getStringBoxSize(newText);
-			column.addContent(bounds.getWidth(), bounds.getHeight(), new DrawStringAction(newText, column.getContentWidth(), 0));
 
-			renderActionsForLine(column);
-			processText(text.substring(newText.length()).trim(), column);
+			String nextText = text.substring(newText.length()).trim();
+
+			// Make sure we don't end up in an infinite loop unable to output the content
+			if (nextText.equals(text)) {
+				LOG.error("Unable to fit content, skipping: " + nextText);
+			} else {
+				column.addContent(bounds.getWidth(), bounds.getHeight(), new DrawStringAction(newText, column.getContentWidth(), 0));
+
+				renderActionsForLine(column);
+
+				processText(nextText, column);
+			}
 		}
 	}
 
@@ -442,7 +451,7 @@ public class DocxToGraphics2D {
 
 		String rId = graphic.getGraphicData().getPic().getBlipFill().getBlip().getEmbed();
 
-		column.addContent(width, height, new DrawImageAction(rId, width, height, column.getContentWidth()));
+		column.addContentForced(width, height, new DrawImageAction(rId, width, height, column.getContentWidth()));
 	}
 
 	private ParagraphStyle getStyleById(ParagraphStyle baseStyle, String styleId) {
@@ -593,14 +602,18 @@ public class DocxToGraphics2D {
 				try {
 					BufferedImage bi = getImage(di.getRelationshipId());
 
-					g.drawImage(
-						bi,
-						alignmentOffset + di.getX(),
-						yOffset - di.getHeight(),
-						di.getWidth(),
-						di.getHeight(),
-						null
-					);
+					if (bi == null) {
+						LOG.error("Error creating image for " + di.getRelationshipId());
+					} else {
+						g.drawImage(
+							bi,
+							alignmentOffset + di.getX(),
+							yOffset - di.getHeight(),
+							di.getWidth(),
+							di.getHeight(),
+							null
+						);
+					}
 				} catch (IOException ioe) {
 					LOG.error("Error reading image", ioe);
 				}

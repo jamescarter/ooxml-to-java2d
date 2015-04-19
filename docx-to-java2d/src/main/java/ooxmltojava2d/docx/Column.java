@@ -67,6 +67,10 @@ public class Column {
 			throw new ContentTooBigException("Content too big for current line");
 		}
 
+		addContentForced(newContentWidth, newContentHeight, newContent);
+	}
+
+	public void addContentForced(double newContentWidth, double newContentHeight, Object newContent) {
 		contentWidth += newContentWidth;
 		contentHeight = (int) Math.max(contentHeight, newContentHeight);
 		actions.add(newContent);
