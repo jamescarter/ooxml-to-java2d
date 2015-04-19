@@ -30,7 +30,6 @@ import java.util.Deque;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 import org.docx4j.dml.CTPositiveSize2D;
 import org.docx4j.dml.Graphic;
 import org.docx4j.dml.wordprocessingDrawing.Anchor;
@@ -65,13 +64,15 @@ import org.docx4j.wml.Tc;
 import org.docx4j.wml.Text;
 import org.docx4j.wml.Tr;
 import org.docx4j.wml.UnderlineEnumeration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.imageio.ImageIO;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 
 public class DocxToGraphics2D {
-	private static final Logger LOG = Logger.getLogger(DocxToGraphics2D.class);
+	private static final Logger LOG = LoggerFactory.getLogger(DocxToGraphics2D.class);
 	private static final int TAB_WIDTH = 712;
 	private static final int EMU_DIVISOR = 635; // divide emu by this to convert to dxa
 	private GraphicsBuilder builder;
