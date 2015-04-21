@@ -179,7 +179,7 @@ public class DocxToGraphics2D {
 
 		if (header != null) {
 			yOffset = layout.getHeaderMargin();
-			relPart = header.getRelationshipsPart();
+			relPart = header.getRelationshipsPart(false);
 
 			iterateContentParts(header, new Column(layout.getLeftMargin(), layout.getWidth()));
 		}
@@ -232,7 +232,7 @@ public class DocxToGraphics2D {
 			}
 
 			if (properties.getJc() != null) {
-				switch(properties.getJc().getVal()) {
+				switch (properties.getJc().getVal()) {
 					case RIGHT:
 						newParaStyle.setAlignment(Alignment.RIGHT);
 					break;
@@ -258,7 +258,7 @@ public class DocxToGraphics2D {
 
 		yOffset += paraStyle.getSpaceAfter();
 
-		if (properties!= null && properties.getSectPr() != null) {
+		if (properties != null && properties.getSectPr() != null) {
 			// The presence of SectPr indicates the next part should be started on a new page with a different layout
 			createPageFromNextLayout();
 			return true;
@@ -314,7 +314,7 @@ public class DocxToGraphics2D {
 			String[] words = text.split(" ");
 			String newText = "";
 
-			for (int i=0; i<words.length; i++) {
+			for (int i = 0; i < words.length; i++) {
 				if (newText.isEmpty()) {
 					bounds = runStyle.getStringBoxSize(words[i]);
 				} else {
@@ -327,7 +327,7 @@ public class DocxToGraphics2D {
 					if (i == 0) {
 						char[] chars = text.toCharArray();
 
-						for (int k=0; k<chars.length; k++) {
+						for (int k = 0; k < chars.length; k++) {
 							bounds = runStyle.getStringBoxSize(newText + chars[k]);
 
 							if (column.canFitContent(bounds.getWidth())) {
@@ -383,7 +383,7 @@ public class DocxToGraphics2D {
 				int col = 0;
 
 				// Set all columns y-offsets to the same position so they're all in-line
-				for (int i=0; i<columnWidths.size(); i++) {
+				for (int i = 0; i < columnWidths.size(); i++) {
 					columnYOffsets.add(yOffset);
 				}
 
@@ -400,7 +400,7 @@ public class DocxToGraphics2D {
 								int mergeCols = tableCell.getTcPr().getGridSpan().getVal().intValue();
 								width = columnWidths.get(col);
 
-								for (int i=0; i<mergeCols-1; i++) {
+								for (int i = 0; i < mergeCols - 1; i++) {
 									width += columnWidths.get(++col);
 								}
 							}
@@ -577,7 +577,7 @@ public class DocxToGraphics2D {
 		yOffset += column.getContentHeight();
 		int alignmentOffset = column.getXOffset();
 
-		switch(paraStyle.getAlignment()) {
+		switch (paraStyle.getAlignment()) {
 			case RIGHT:
 				alignmentOffset += column.getWidth() - column.getContentWidth();
 			break;
@@ -593,7 +593,7 @@ public class DocxToGraphics2D {
 				DrawStringAction ds = (DrawStringAction) obj;
 				g.drawString(ds.getText(), alignmentOffset + ds.getX(), yOffset);
 			} else if (obj instanceof Color) {
-				g.setColor(((Color) obj));
+				g.setColor((Color) obj);
 			} else if (obj instanceof FontConfig) {
 				FontConfig fc = (FontConfig) obj;
 				g.setFont(fc.getFont());

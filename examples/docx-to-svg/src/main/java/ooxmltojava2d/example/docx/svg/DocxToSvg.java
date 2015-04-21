@@ -52,7 +52,7 @@ public class DocxToSvg {
 		}
 
 		public void writeToDisk() throws IOException {
-			for (int i=0; i<svgs.size(); i++) {
+			for (int i = 0; i < svgs.size(); i++) {
 				SVGGraphics2D g = svgs.get(i);
 
 				try (PrintStream out = new PrintStream(new FileOutputStream("page" + (i + 1) + ".svg"))) {

@@ -19,8 +19,6 @@ package ooxmltojava2d.docx;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import ooxmltojava2d.docx.Column;
-import ooxmltojava2d.docx.ContentTooBigException;
 
 import org.junit.Before;
 import org.junit.Test;

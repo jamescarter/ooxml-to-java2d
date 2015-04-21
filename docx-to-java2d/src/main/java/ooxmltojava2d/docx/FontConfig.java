@@ -64,7 +64,7 @@ public class FontConfig {
 		if (!hasStyle(style)) {
 			styles.add(style);
 
-			switch(style) {
+			switch (style) {
 				case BOLD:
 					font = font.deriveFont(Font.BOLD);
 				break;

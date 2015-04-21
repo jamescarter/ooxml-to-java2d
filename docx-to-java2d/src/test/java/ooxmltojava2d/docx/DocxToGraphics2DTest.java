@@ -27,8 +27,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
-import ooxmltojava2d.docx.DocxToGraphics2D;
-
 import org.junit.Before;
 import org.junit.Test;
 
@@ -212,16 +210,16 @@ public class DocxToGraphics2DTest {
 
 		List<Object> actions = builder.getPages().get(0).getActions(Color.class, DrawStringAction.class);
 
-		assertEquals(Color.BLACK, ((Color)actions.get(0)));
+		assertEquals(Color.BLACK, (Color) actions.get(0));
 
-		assertEquals(Color.RED, ((Color)actions.get(1)));
-		assertEquals("Red", ((DrawStringAction)actions.get(2)).getText());
+		assertEquals(Color.RED, (Color) actions.get(1));
+		assertEquals("Red", ((DrawStringAction) actions.get(2)).getText());
 
-		assertEquals(Color.GREEN, ((Color)actions.get(5)));
-		assertEquals("green", ((DrawStringAction)actions.get(6)).getText());
+		assertEquals(Color.GREEN, (Color) actions.get(5));
+		assertEquals("green", ((DrawStringAction) actions.get(6)).getText());
 
-		assertEquals(Color.BLUE, ((Color)actions.get(9)));
-		assertEquals("blue", ((DrawStringAction)actions.get(10)).getText());
+		assertEquals(Color.BLUE, (Color) actions.get(9));
+		assertEquals("blue", ((DrawStringAction) actions.get(10)).getText());
 	}
 
 	@Test

@@ -56,10 +56,10 @@ public class DocxToImage {
 		}
 
 		public void writeToDisk() throws IOException {
-			for (int i=0; i<images.size(); i++) {
+			for (int i = 0; i < images.size(); i++) {
 				BufferedImage bi = images.get(i);
 
-				ImageIO.write(bi, "PNG", new File("page" + (i + 1) +".png"));
+				ImageIO.write(bi, "PNG", new File("page" + (i + 1) + ".png"));
 			}
 		}
 	}
