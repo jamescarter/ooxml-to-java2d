@@ -432,10 +432,35 @@ public class DocxToGraphics2D {
 		for (Object obj : drawing.getAnchorOrInline()) {
 			if (obj instanceof Inline) {
 				Inline inline = (Inline) obj;
+
 				processGraphic(inline.getExtent(), inline.getGraphic(), column);
 			} else if (obj instanceof Anchor) {
 				Anchor anchor = (Anchor) obj;
-				processGraphic(anchor.getExtent(), anchor.getGraphic(), column);
+
+				if (anchor.isBehindDoc()) {
+					// position image absolutely, no need to add to column
+					int width = (int) anchor.getExtent().getCx() / EMU_DIVISOR;
+					int height = (int) anchor.getExtent().getCy() / EMU_DIVISOR;
+					int x = anchor.getPositionH().getPosOffset() / EMU_DIVISOR;
+					int y = anchor.getPositionV().getPosOffset() / EMU_DIVISOR;
+
+					try {
+						BufferedImage bi = getImage(anchor.getGraphic().getGraphicData().getPic().getBlipFill().getBlip().getEmbed());
+
+						g.drawImage(
+							bi,
+							x,
+							y,
+							width,
+							height,
+							null
+						);
+					} catch (IOException ioe) {
+						LOG.error("Error reading image", ioe);
+					}
+				} else {
+					processGraphic(anchor.getExtent(), anchor.getGraphic(), column);
+				}
 			} else {
 				LOG.debug("Unhandled drawing object " + obj.getClass());
 			}

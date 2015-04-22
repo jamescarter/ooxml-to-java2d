@@ -49,6 +49,7 @@ public class DocxToGraphics2DTest {
 	private static final File TEST_TABLE_MERGE_HORIZONTAL = new File("src/test/resources/docx/table_merge_horizontal.docx");
 	private static final File TEST_IMAGE_INLINE = new File("src/test/resources/docx/image_inline.docx");
 	private static final File TEST_IMAGE_ANCHOR = new File("src/test/resources/docx/image_anchor.docx");
+	private static final File TEST_IMAGE_ANCHOR_PAGE_WRAP_BG = new File("src/test/resources/docx/image_anchor_page_wrap_background.docx");
 	private static final File TEST_EMPTY_PARAGRAPH = new File("src/test/resources/docx/empty_paragraph.docx");
 	private static final File TEST_PAGE_BREAK = new File("src/test/resources/docx/page_break.docx");
 	private static final File TEST_PAGE_BREAK_OVERFLOW = new File("src/test/resources/docx/page_break_overflow.docx");
@@ -497,6 +498,15 @@ public class DocxToGraphics2DTest {
 		DrawImageAction di = actions.get(0);
 		assertEquals(713, di.getWidth());
 		assertEquals(540, di.getHeight());
+	}
+
+	@Test
+	public void testImageAnchorPageWrapBackground() throws IOException {
+		new DocxToGraphics2D(builder, TEST_IMAGE_ANCHOR_PAGE_WRAP_BG).process();
+
+		List<DrawImageAction> actions = builder.getPages().get(0).getActions(DrawImageAction.class);
+		DrawImageAction di = actions.get(0);
+		assertEquals(2219, di.getX());
 	}
 
 	@Test
