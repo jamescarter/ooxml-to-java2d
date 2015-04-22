@@ -155,13 +155,22 @@ public class DocxToGraphics2D {
 	}
 
 	private void createPageFromLayout() {
-		g = builder.nextPage(layout.getWidth(), layout.getHeight());
-		g.setBackground(Color.WHITE);
-		g.clearRect(0, 0, layout.getWidth(), layout.getHeight());
-		g.setColor(Color.BLACK);	
-		g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
-		g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
-		g.setRenderingHint(RenderingHints.KEY_TEXT_LCD_CONTRAST, 250);
+		Graphics2D g2 = builder.nextPage(layout.getWidth(), layout.getHeight());
+
+		g2.setBackground(Color.WHITE);
+		g2.clearRect(0, 0, layout.getWidth(), layout.getHeight());
+		g2.setColor(Color.BLACK);	
+		g2.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+		g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
+		g2.setRenderingHint(RenderingHints.KEY_TEXT_LCD_CONTRAST, 250);
+
+		// Use the settings from the previous 'page'
+		if (g != null) {
+			g2.setFont(g.getFont());
+			g2.setColor(g.getColor());
+		}
+
+		g = g2;
 
 		HeaderPart header = null;
 
@@ -387,6 +396,8 @@ public class DocxToGraphics2D {
 					columnYOffsets.add(yOffset);
 				}
 
+				List<Column> cacheColumns = new ArrayList<>();
+
 				for (Object rowObj : tableRow.getContent()) {
 					if (rowObj instanceof JAXBElement) {
 						JAXBElement<?> element = (JAXBElement<?>) rowObj;
@@ -407,6 +418,8 @@ public class DocxToGraphics2D {
 
 							Column cellColumn = new Column(xOffset, width);
 
+							cellColumn.setCacheOverPageFold(true);
+
 							// restore this columns previous y-offset before processing
 							yOffset = columnYOffsets.get(col);
 
@@ -416,14 +429,34 @@ public class DocxToGraphics2D {
 							columnYOffsets.set(col, yOffset);
 							xOffset += cellColumn.getWidth();
 							++col;
+
+							// If the column still has content, it must need to break onto the next page
+							if (cellColumn.hasContent()) {
+								cacheColumns.add(cellColumn);
+							}
 						}
 					} else {
 						LOG.debug("Unhandled row object " + rowObj.getClass());
 					}
 				}
 
-				// Set the next content that's output to start after the last row 
-				yOffset = columnYOffsets.stream().max(Integer::compare).get();
+				// Identify if any content was kept across the page folder
+				if (cacheColumns.size() > 0) {
+					createPageFromLayout();
+
+					int start = yOffset; // start every column from the same position
+					int maxYOffset = start;
+
+					for (Column cacheColumn : cacheColumns) {
+						cacheColumn.setCacheOverPageFold(false);
+						yOffset = start;
+						renderActionsForLine(cacheColumn);
+						maxYOffset = Math.max(maxYOffset, yOffset);
+					}
+				} else {
+					// Set the next content that's output to start after the last row 
+					yOffset = columnYOffsets.stream().max(Integer::compare).get();
+				}
 			}
 		}
 	}
@@ -596,7 +629,11 @@ public class DocxToGraphics2D {
 	private void renderActionsForLine(Column column) {
 		// Check if this line will fit onto the current page, otherwise create a new page
 		if (yOffset + column.getContentHeight() > layout.getHeight() - layout.getBottomMargin()) {
-			createPageFromLayout();
+			if (column.isCachedOverPageFold()) {
+				return;
+			} else {
+				createPageFromLayout();
+			}
 		}
 
 		yOffset += column.getContentHeight();

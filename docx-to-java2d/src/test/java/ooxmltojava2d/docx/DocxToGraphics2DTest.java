@@ -53,6 +53,8 @@ public class DocxToGraphics2DTest {
 	private static final File TEST_EMPTY_PARAGRAPH = new File("src/test/resources/docx/empty_paragraph.docx");
 	private static final File TEST_PAGE_BREAK = new File("src/test/resources/docx/page_break.docx");
 	private static final File TEST_PAGE_BREAK_OVERFLOW = new File("src/test/resources/docx/page_break_overflow.docx");
+	private static final File TEST_PAGE_BREAK_TABLE_OVERFLOW = new File("src/test/resources/docx/page_break_table_overflow.docx");
+	private static final File TEST_PAGE_BREAK_TABLE_OVERFLOW2 = new File("src/test/resources/docx/page_break_table_overflow2.docx");
 	private static final File TEST_PARAGRAPH_BREAK = new File("src/test/resources/docx/paragraph_break.docx");
 	private MockGraphicsBuilder builder;
 
@@ -556,6 +558,40 @@ public class DocxToGraphics2DTest {
 		assertEquals(2, pages.size());
 		assertEquals("O", pages.get(1).getActions(DrawStringAction.class).get(0).getText());
 		assertEquals("P", pages.get(1).getActions(DrawStringAction.class).get(1).getText());
+	}
+
+	@Test
+	public void testPageBreakTableOverflow() throws IOException {
+		new DocxToGraphics2D(builder, TEST_PAGE_BREAK_TABLE_OVERFLOW).process();
+
+		List<MockGraphics2D> pages = builder.getPages();
+
+		// Check that the second page has the content we're expecting
+		assertEquals(2, pages.size());
+
+		List<DrawStringAction> actions = pages.get(1).getActions(DrawStringAction.class);
+
+		// We're only expecting a single character
+		assertEquals(1, actions.size());
+		assertEquals("P", actions.get(0).getText());
+	}
+
+	@Test
+	public void testPageBreakTableOverflow2() throws IOException {
+		new DocxToGraphics2D(builder, TEST_PAGE_BREAK_TABLE_OVERFLOW2).process();
+
+		List<MockGraphics2D> pages = builder.getPages();
+
+		// Check that the second page has the content we're expecting
+		assertEquals(2, pages.size());
+
+		List<DrawStringAction> actions = pages.get(1).getActions(DrawStringAction.class);
+
+		int baseY = actions.get(0).getY();
+
+		for (int i = 1; i < actions.size(); i++) {
+			assertEquals(baseY, actions.get(i).getY());
+		}
 	}
 
 	/*

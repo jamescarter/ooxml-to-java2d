@@ -32,6 +32,7 @@ public class Column {
 	private int contentWidth;
 	private int contentHeight;
 	private List<Object> actions = new ArrayList<>();
+	private boolean isCachedOverPageFold;
 
 	public Column(int xOffset, int width) {
 		this.width = width;
@@ -56,6 +57,10 @@ public class Column {
 
 	public List<Object> getActions() {
 		return Collections.unmodifiableList(actions);
+	}
+
+	public boolean hasContent() {
+		return actions.size() > 0;
 	}
 
 	public boolean canFitContent(double newContentWidth) {
@@ -88,6 +93,18 @@ public class Column {
 		actions.add(action);
 	}
 
+	public boolean isCachedOverPageFold() {
+		return isCachedOverPageFold;
+	}
+
+	/**
+	 * Sets whether the content should be temporarily cached across pages folds
+	 * @param isCachedOverPageFold if the content should be cached across page folds
+	 */
+	public void setCacheOverPageFold(boolean isCachedOverPageFold) {
+		this.isCachedOverPageFold = isCachedOverPageFold;
+	}
+
 	public void reset() {
 		contentWidth = 0;
 		contentHeight = 0;
@@ -102,6 +119,7 @@ public class Column {
 			.append("contentWidth", contentWidth)
 			.append("contentHeight", contentHeight)
 			.append("actions", actions)
+			.append("isCachedOverPageFold", isCachedOverPageFold)
 			.toString();
 	}
 }
