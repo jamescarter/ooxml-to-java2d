@@ -3,11 +3,11 @@
   <groupId>com.github.jamescarter.ooxml2java2d</groupId>
   <artifactId>docx2pdf-fop</artifactId>
   <packaging>jar</packaging>
-  <version>1.0.0</version>
+  <version>1.0.1-SNAPSHOT</version>
   <parent>
     <groupId>com.github.jamescarter.ooxml2java2d</groupId>
     <artifactId>examples-pdf</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1-SNAPSHOT</version>
   </parent>
   <name>DOCX to PDF (Apache FOP)</name>
 
