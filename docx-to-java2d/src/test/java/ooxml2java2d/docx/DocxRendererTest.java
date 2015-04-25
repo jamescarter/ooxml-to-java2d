@@ -53,12 +53,13 @@ public class DocxRendererTest {
 	private static final File TEST_IMAGE_INLINE = new File("src/test/resources/docx/image_inline.docx");
 	private static final File TEST_IMAGE_ANCHOR = new File("src/test/resources/docx/image_anchor.docx");
 	private static final File TEST_IMAGE_ANCHOR_PAGE_WRAP_BG = new File("src/test/resources/docx/image_anchor_page_wrap_background.docx");
-	private static final File TEST_EMPTY_PARAGRAPH = new File("src/test/resources/docx/empty_paragraph.docx");
 	private static final File TEST_PAGE_BREAK = new File("src/test/resources/docx/page_break.docx");
 	private static final File TEST_PAGE_BREAK_OVERFLOW = new File("src/test/resources/docx/page_break_overflow.docx");
 	private static final File TEST_PAGE_BREAK_TABLE_OVERFLOW = new File("src/test/resources/docx/page_break_table_overflow.docx");
 	private static final File TEST_PAGE_BREAK_TABLE_OVERFLOW2 = new File("src/test/resources/docx/page_break_table_overflow2.docx");
+	private static final File TEST_EMPTY_PARAGRAPH = new File("src/test/resources/docx/empty_paragraph.docx");
 	private static final File TEST_PARAGRAPH_BREAK = new File("src/test/resources/docx/paragraph_break.docx");
+	private static final File TEST_PARAGRAPH_SPACING = new File("src/test/resources/docx/paragraph_spacing.docx");
 	private MockGraphicsBuilder builder;
 
 	@Before
@@ -514,26 +515,6 @@ public class DocxRendererTest {
 		assertEquals(2219, di.getX());
 	}
 
-	@Test
-	public void testEmptyParagraph() throws IOException {
-		new DocxRenderer(TEST_EMPTY_PARAGRAPH).render(builder);
-
-		List<DrawStringAction> actions = builder.getPages().get(0).getActions(DrawStringAction.class);
-
-		DrawStringAction ds1 = actions.get(0);
-		DrawStringAction ds2 = actions.get(1);
-		DrawStringAction ds3 = actions.get(2);
-
-		assertEquals("Paragraph 1", ds1.getText());
-		int y = ds1.getY();
-
-		assertEquals("Paragraph 3", ds2.getText());
-		assertEquals(y += 550, ds2.getY());
-
-		assertEquals("Paragraph 6", ds3.getText());
-		assertEquals(y += 825, ds3.getY());
-	}
-
 	/*
 	 * Test that a new page is created when an explicit page break is found
 	 */
@@ -597,6 +578,26 @@ public class DocxRendererTest {
 		}
 	}
 
+	@Test
+	public void testEmptyParagraph() throws IOException {
+		new DocxRenderer(TEST_EMPTY_PARAGRAPH).render(builder);
+
+		List<DrawStringAction> actions = builder.getPages().get(0).getActions(DrawStringAction.class);
+
+		DrawStringAction ds1 = actions.get(0);
+		DrawStringAction ds2 = actions.get(1);
+		DrawStringAction ds3 = actions.get(2);
+
+		assertEquals("Paragraph 1", ds1.getText());
+		int y = ds1.getY();
+
+		assertEquals("Paragraph 3", ds2.getText());
+		assertEquals(y += 550, ds2.getY());
+
+		assertEquals("Paragraph 6", ds3.getText());
+		assertEquals(y += 825, ds3.getY());
+	}
+
 	/*
 	 * Test that a paragraph break moves the following content to the next line
 	 */
@@ -612,6 +613,18 @@ public class DocxRendererTest {
 		assertEquals("Hello", hello.getText());
 		assertEquals("World", world.getText());
 		assertTrue(hello.getY() < world.getY());
+	}
+
+	/*
+	 * Test that paragraph spacing is used by checking "B" is pushed onto the second page
+	 */
+	@Test
+	public void testParagraphSpacing() throws IOException {
+		new DocxRenderer(TEST_PARAGRAPH_SPACING).render(builder);
+
+		List<DrawStringAction> actions = builder.getPages().get(1).getActions(DrawStringAction.class);
+
+		assertEquals("B", actions.get(0).getText());
 	}
 
 	private void assertFontAttributes(Font font, Object ... expectedStyles) {

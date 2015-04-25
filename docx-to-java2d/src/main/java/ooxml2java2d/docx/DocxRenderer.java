@@ -122,7 +122,7 @@ public class DocxRenderer implements Renderer {
 	}
 
 	private void setDefaultStyles() {
-		defaultParaStyle = getStyle(
+		defaultParaStyle = getRunStyle(
 			new ParagraphStyle(),
 			main.getStyleTree().getParagraphStylesTree().get("DocDefaults").getData().getStyle().getRPr()
 		);
@@ -237,33 +237,14 @@ public class DocxRenderer implements Renderer {
 	// Returns true if a new page was created
 	private boolean processParagraph(P p, Column column) {
 		PPr properties = p.getPPr();
-		ParagraphStyle newParaStyle = new ParagraphStyle(defaultParaStyle);
 
-		if (properties != null) {
-			if (properties.getPStyle() != null) {
-				PStyle pstyle = properties.getPStyle();
+		paraStyle = getParagraphStyle(defaultParaStyle, properties);
 
-				newParaStyle = getStyleById(defaultParaStyle, pstyle.getVal());
-			}
-
-			if (properties.getJc() != null) {
-				switch (properties.getJc().getVal()) {
-					case RIGHT:
-						newParaStyle.setAlignment(Alignment.RIGHT);
-					break;
-					case CENTER:
-						newParaStyle.setAlignment(Alignment.CENTER);
-					break;
-					default:
-						// default to LEFT aligned
-				}
-			}
+		if (yOffset != layout.getTopMargin()) {
+			yOffset += paraStyle.getSpaceBefore();
 		}
 
-		yOffset += newParaStyle.getSpaceBefore();
-		paraStyle = newParaStyle;
-
-		if (p.getContent().size() == 0) {
+		if (p.getPPr() != null && p.getContent().size() == 0) {
 			yOffset += paraStyle.getStringBoxSize("").getHeight();
 		} else {
 			iterateContentParts(p, column);
@@ -283,7 +264,7 @@ public class DocxRenderer implements Renderer {
 	}
 
 	private void processTextRun(R run, Column column) {
-		ParagraphStyle newRunStyle = getStyle(paraStyle, run.getRPr());
+		ParagraphStyle newRunStyle = getRunStyle(paraStyle, run.getRPr());
 
 		if (runStyle == null || !newRunStyle.getFontConfig().equals(runStyle.getFontConfig())) {
 			column.addAction(newRunStyle.getFontConfig());
@@ -372,7 +353,6 @@ public class DocxRenderer implements Renderer {
 				column.addContent(bounds.getWidth(), bounds.getHeight(), new DrawStringAction(newText, column.getContentWidth(), 0));
 
 				renderActionsForLine(column);
-
 				processText(nextText, column);
 			}
 		}
@@ -539,7 +519,23 @@ public class DocxRenderer implements Renderer {
 		}
 
 		if (style.getPPr() != null) {
-			Spacing spacing = style.getPPr().getSpacing();
+			newStyle = getParagraphStyle(newStyle, style.getPPr());
+		}
+
+		return getRunStyle(newStyle, style.getRPr());
+	}
+
+	private ParagraphStyle getParagraphStyle(ParagraphStyle baseStyle, PPr properties) {
+		ParagraphStyle newStyle = new ParagraphStyle(baseStyle);
+
+		if (properties != null) {
+			if (properties.getPStyle() != null) {
+				PStyle pstyle = properties.getPStyle();
+
+				newStyle = getStyleById(baseStyle, pstyle.getVal());
+			}
+
+			Spacing spacing = properties.getSpacing();
 
 			if (spacing != null) {
 				if (spacing.getLine() != null) {
@@ -554,12 +550,25 @@ public class DocxRenderer implements Renderer {
 					newStyle.setSpaceAfter(spacing.getAfter().intValue());
 				}
 			}
+
+			if (properties.getJc() != null) {
+				switch (properties.getJc().getVal()) {
+					case RIGHT:
+						newStyle.setAlignment(Alignment.RIGHT);
+					break;
+					case CENTER:
+						newStyle.setAlignment(Alignment.CENTER);
+					break;
+					default:
+						// default to LEFT aligned
+				}
+			}
 		}
 
-		return getStyle(newStyle, style.getRPr());
+		return newStyle;
 	}
 
-	private ParagraphStyle getStyle(ParagraphStyle baseStyle, RPr runProperties) {
+	private ParagraphStyle getRunStyle(ParagraphStyle baseStyle, RPr runProperties) {
 		if (runProperties == null) {
 			return baseStyle;
 		}
