@@ -18,9 +18,9 @@ package ooxml2java2d.docx;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.RenderingHints;
 import java.awt.geom.Rectangle2D;
-import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -493,20 +493,13 @@ public class DocxRenderer implements Renderer {
 					int x = anchor.getPositionH().getPosOffset() / EMU_DIVISOR;
 					int y = anchor.getPositionV().getPosOffset() / EMU_DIVISOR;
 
-					try {
-						BufferedImage bi = getImage(anchor.getGraphic().getGraphicData().getPic().getBlipFill().getBlip().getEmbed());
-
-						g.drawImage(
-							bi,
-							x,
-							y,
-							width,
-							height,
-							null
-						);
-					} catch (IOException ioe) {
-						LOG.error("Error reading image", ioe);
-					}
+					renderImage(
+						anchor.getGraphic().getGraphicData().getPic().getBlipFill().getBlip().getEmbed(),
+						x,
+						y,
+						width,
+						height
+					);
 				} else {
 					processGraphic(anchor.getExtent(), anchor.getGraphic(), column);
 				}
@@ -698,40 +691,52 @@ public class DocxRenderer implements Renderer {
 		for (Object obj : column.getActions()) {
 			if (obj instanceof DrawStringAction) {
 				DrawStringAction ds = (DrawStringAction) obj;
+
 				g.drawString(ds.getText(), alignmentOffset + ds.getX(), yOffset);
 			} else if (obj instanceof Color) {
 				g.setColor((Color) obj);
 			} else if (obj instanceof FontConfig) {
 				FontConfig fc = (FontConfig) obj;
+
 				g.setFont(fc.getFont());
 			} else if (obj instanceof DrawImageAction) {
 				DrawImageAction di = (DrawImageAction) obj;
 
-				try {
-					BufferedImage bi = getImage(di.getRelationshipId());
-
-					if (bi == null) {
-						LOG.error("Error creating image for " + di.getRelationshipId());
-					} else {
-						g.drawImage(
-							bi,
-							alignmentOffset + di.getX(),
-							yOffset - di.getHeight(),
-							di.getWidth(),
-							di.getHeight(),
-							null
-						);
-					}
-				} catch (IOException ioe) {
-					LOG.error("Error reading image", ioe);
-				}
+				renderImage(
+					di.getRelationshipId(),
+					alignmentOffset + di.getX(),
+					yOffset - di.getHeight(),
+					di.getWidth(),
+					di.getHeight()
+				);
 			}
 		}
 
 		column.reset();
 	}
 
-	private BufferedImage getImage(String relationshipId) throws IOException {
+	private void renderImage(String relationshipId, int x, int y, int width, int height) {
+		try {
+			Image bi = getImage(relationshipId);
+
+			if (bi == null) {
+				LOG.error("Error creating image for " + relationshipId);
+			} else {
+				g.drawImage(
+					bi,
+					x,
+					y,
+					width,
+					height,
+					null
+				);
+			}
+		} catch (IOException ioe) {
+			LOG.error("Error reading image", ioe);
+		}
+	}
+
+	private Image getImage(String relationshipId) throws IOException {
 		BinaryPart binary = (BinaryPart) relPart.getPart(relationshipId);
 
 		return ImageIO.read(new ByteArrayInputStream(binary.getBytes()));
