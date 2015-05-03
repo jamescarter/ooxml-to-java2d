@@ -22,7 +22,6 @@
     </module>
     <module name="EmptyStatement"/>
     <module name="EqualsHashCode"/>
-    <module name="IllegalType"/>
     <module name="InnerTypeLast"/>
     <module name="LeftCurly"/>
     <module name="MissingOverride"/>

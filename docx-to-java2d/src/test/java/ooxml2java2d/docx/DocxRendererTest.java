@@ -60,6 +60,7 @@ public class DocxRendererTest {
 	private static final File TEST_EMPTY_PARAGRAPH = new File("src/test/resources/docx/empty_paragraph.docx");
 	private static final File TEST_PARAGRAPH_BREAK = new File("src/test/resources/docx/paragraph_break.docx");
 	private static final File TEST_PARAGRAPH_SPACING = new File("src/test/resources/docx/paragraph_spacing.docx");
+	private static final File TEST_LIST_BULLET = new File("src/test/resources/docx/list_bullet.docx");
 	private MockGraphicsBuilder builder;
 
 	@Before
@@ -625,6 +626,46 @@ public class DocxRendererTest {
 		List<DrawStringAction> actions = builder.getPages().get(1).getActions(DrawStringAction.class);
 
 		assertEquals("B", actions.get(0).getText());
+	}
+
+	/*
+	 * Tests multilevel list of bullets is properly indented
+	 */
+	@Test
+	public void testBulletList() throws IOException {
+		new DocxRenderer(TEST_LIST_BULLET).render(builder);
+
+		List<DrawStringAction> actions = builder.getPages().get(0).getActions(DrawStringAction.class);
+
+		DrawStringAction b1 = actions.get(1);
+		DrawStringAction b2 = actions.get(3);
+		DrawStringAction b3 = actions.get(5);
+		DrawStringAction b4 = actions.get(7);
+		DrawStringAction b5 = actions.get(9);
+
+		DrawStringAction t1 = actions.get(2);
+		DrawStringAction t2 = actions.get(4);
+		DrawStringAction t3 = actions.get(6);
+		DrawStringAction t4 = actions.get(8);
+		DrawStringAction t5 = actions.get(10);
+
+		assertEquals("•", b1.getText());
+		assertEquals(b1.getText(), b2.getText());
+		assertEquals(b1.getText(), b3.getText());
+		assertEquals(b1.getText(), b4.getText());
+		assertEquals(b1.getText(), b5.getText());
+
+		assertEquals("Level 1 #1", t1.getText());
+		assertEquals("Level 2 #1", t2.getText());
+		assertEquals("Level 3 #1", t3.getText());
+		assertEquals("Level 2 #2", t4.getText());
+		assertEquals("Level 1 #2", t5.getText());
+
+		assertEquals(1938, t1.getX());
+		assertEquals(2298, t2.getX());
+		assertEquals(2658, t3.getX());
+		assertEquals(t2.getX(), t4.getX());
+		assertEquals(t1.getX(), t5.getX());
 	}
 
 	private void assertFontAttributes(Font font, Object ... expectedStyles) {

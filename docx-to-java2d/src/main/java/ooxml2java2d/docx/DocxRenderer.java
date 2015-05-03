@@ -45,6 +45,8 @@ import org.docx4j.dml.CTPositiveSize2D;
 import org.docx4j.dml.Graphic;
 import org.docx4j.dml.wordprocessingDrawing.Anchor;
 import org.docx4j.dml.wordprocessingDrawing.Inline;
+import org.docx4j.model.listnumbering.AbstractListNumberingDefinition;
+import org.docx4j.model.listnumbering.ListLevel;
 import org.docx4j.model.structure.SectionWrapper;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
@@ -55,8 +57,10 @@ import org.docx4j.openpackaging.parts.relationships.RelationshipsPart;
 import org.docx4j.wml.Br;
 import org.docx4j.wml.ContentAccessor;
 import org.docx4j.wml.Drawing;
+import org.docx4j.wml.Lvl;
 import org.docx4j.wml.P;
 import org.docx4j.wml.PPr;
+import org.docx4j.wml.PPrBase.NumPr;
 import org.docx4j.wml.PPrBase.PStyle;
 import org.docx4j.wml.PPrBase.Spacing;
 import org.docx4j.wml.R;
@@ -86,6 +90,7 @@ public class DocxRenderer implements Renderer {
 	private static final Logger LOG = LoggerFactory.getLogger(DocxRenderer.class);
 	private static final int TAB_WIDTH = 712;
 	private static final int EMU_DIVISOR = 635; // divide emu by this to convert to dxa
+	private static final String BULLET = new Character((char) 0x2022).toString();
 	private GraphicsBuilder builder;
 	private Graphics2D g;
 	private WordprocessingMLPackage word;
@@ -244,7 +249,30 @@ public class DocxRenderer implements Renderer {
 			yOffset += paraStyle.getSpaceBefore();
 		}
 
-		if (p.getPPr() != null && p.getContent().size() == 0) {
+		if (properties != null && properties.getNumPr() != null) {
+			NumPr numberingProperties = properties.getNumPr();
+			String abstractNumId = numberingProperties.getNumId().getVal().toString();
+			String levelReference = numberingProperties.getIlvl().getVal().toString();
+			AbstractListNumberingDefinition numberingDef = main.getNumberingDefinitionsPart().getAbstractListDefinitions().get(abstractNumId);
+
+			if (numberingDef != null) {
+				ListLevel listLvl = numberingDef.getListLevels().get(levelReference);
+
+				if (listLvl.IsBullet()) {
+					Lvl lvl = listLvl.getJaxbAbstractLvl();
+
+					paraStyle = getParagraphStyle(paraStyle, lvl.getPPr());
+
+					Rectangle2D bounds = paraStyle.getStringBoxSize(BULLET);
+
+					column.addContentOffset(lvl.getPPr().getInd().getLeft().intValue() - lvl.getPPr().getInd().getHanging().intValue());
+					column.addContent(bounds.getWidth(), bounds.getHeight(), new DrawStringAction(BULLET, column.getContentWidth(), 0));
+					column.addContentOffset(lvl.getPPr().getInd().getHanging().intValue());
+				}
+			}
+		}
+
+		if (properties != null && p.getContent().size() == 0) {
 			yOffset += paraStyle.getStringBoxSize("").getHeight();
 		} else {
 			iterateContentParts(p, column);
