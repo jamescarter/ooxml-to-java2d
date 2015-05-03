@@ -51,6 +51,7 @@ import org.docx4j.model.structure.SectionWrapper;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.WordprocessingML.BinaryPart;
+import org.docx4j.openpackaging.parts.WordprocessingML.FooterPart;
 import org.docx4j.openpackaging.parts.WordprocessingML.HeaderPart;
 import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
 import org.docx4j.openpackaging.parts.relationships.RelationshipsPart;
@@ -156,6 +157,7 @@ public class DocxRenderer implements Renderer {
 			margin.getBottom().intValue(),
 			margin.getLeft().intValue(),
 			margin.getHeader().intValue(),
+			margin.getFooter().intValue(),
 			sw.getHeaderFooterPolicy()
 		);
 	}
@@ -184,15 +186,18 @@ public class DocxRenderer implements Renderer {
 		g = g2;
 
 		HeaderPart header = null;
+		FooterPart footer = null;
 
+		// header
 		if (page == 1) {
 			header = layout.getHeaderFooterPolicy().getFirstHeader();
+			footer = layout.getHeaderFooterPolicy().getFirstFooter();
 		}
 
 		if (header == null) {
 			header = layout.getHeaderFooterPolicy().getHeader(page);
 		}
-
+		
 		if (header == null) {
 			header = layout.getHeaderFooterPolicy().getDefaultHeader();
 		}
@@ -202,6 +207,35 @@ public class DocxRenderer implements Renderer {
 			relPart = header.getRelationshipsPart(false);
 
 			iterateContentParts(header, new Column(layout.getLeftMargin(), layout.getWidth()));
+		}
+
+		// footer
+		if (footer == null) {
+			footer = layout.getHeaderFooterPolicy().getFooter(page);
+		}
+
+		if (footer == null) {
+			footer = layout.getHeaderFooterPolicy().getDefaultFooter();
+		}
+
+		if (footer != null) {
+			// set yOffset to end of page to force Column to cache contents
+			yOffset = layout.getHeight();
+			relPart = footer.getRelationshipsPart(false);
+
+			// Create new cached column for footer content
+			Column footerCol = new Column(layout.getLeftMargin(), layout.getWidth());
+
+			footerCol.setCacheOverPageFold(true);
+
+			iterateContentParts(footer, footerCol);
+
+			footerCol.setCacheOverPageFold(false);
+
+			yOffset = layout.getHeight() - layout.getFooterMargin() - footerCol.getContentHeight();
+
+			// force footer content onto current page, otherwise it may be pushed onto a new page
+			renderActionsForLine(footerCol, true);
 		}
 
 		++page;
@@ -665,8 +699,12 @@ public class DocxRenderer implements Renderer {
 	}
 
 	private void renderActionsForLine(Column column) {
+		renderActionsForLine(column, false);
+	}
+
+	private void renderActionsForLine(Column column, boolean forceOntoCurrentPage) {
 		// Check if this line will fit onto the current page, otherwise create a new page
-		if (yOffset + column.getContentHeight() > layout.getHeight() - layout.getBottomMargin()) {
+		if (!forceOntoCurrentPage && yOffset + column.getContentHeight() > layout.getHeight() - layout.getBottomMargin()) {
 			if (column.isCachedOverPageFold()) {
 				return;
 			} else {

@@ -28,11 +28,12 @@ public class PageLayout {
 	private int bottomMargin;
 	private int leftMargin;
 	private int headerMargin;
+	private int footerMargin;
 	private HeaderFooterPolicy headerFooterPolicy;
 
 	public PageLayout(
 		int width, int height, int topMargin, int rightMargin, int bottomMargin,
-		int leftMargin, int headerMargin, HeaderFooterPolicy headerFooterPolicy
+		int leftMargin, int headerMargin, int footerMargin, HeaderFooterPolicy headerFooterPolicy
 	) {
 		this.width = width;
 		this.height = height;
@@ -41,6 +42,7 @@ public class PageLayout {
 		this.bottomMargin = bottomMargin;
 		this.leftMargin = leftMargin;
 		this.headerMargin = headerMargin;
+		this.footerMargin = footerMargin;
 		this.headerFooterPolicy = headerFooterPolicy;
 	}
 
@@ -72,6 +74,10 @@ public class PageLayout {
 		return headerMargin;
 	}
 
+	public int getFooterMargin() {
+		return footerMargin;
+	}
+
 	public HeaderFooterPolicy getHeaderFooterPolicy() {
 		return headerFooterPolicy;
 	}
@@ -86,6 +92,7 @@ public class PageLayout {
 			.append("bottomMargin", bottomMargin)
 			.append("leftMargin", leftMargin)
 			.append("headerMargin", headerMargin)
+			.append("footerMargin", footerMargin)
 			.toString();
 	}
 }
