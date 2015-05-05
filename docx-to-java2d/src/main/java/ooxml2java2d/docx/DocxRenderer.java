@@ -24,6 +24,7 @@ import java.awt.geom.Rectangle2D;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -152,12 +153,12 @@ public class DocxRenderer implements Renderer {
 		return new PageLayout(
 			size.getW().intValue(),
 			size.getH().intValue(),
-			margin.getTop().intValue(),
-			margin.getRight().intValue(),
-			margin.getBottom().intValue(),
-			margin.getLeft().intValue(),
-			margin.getHeader().intValue(),
-			margin.getFooter().intValue(),
+			getValue(margin.getTop()),
+			getValue(margin.getRight()),
+			getValue(margin.getBottom()),
+			getValue(margin.getLeft()),
+			getValue(margin.getHeader()),
+			getValue(margin.getFooter()),
 			sw.getHeaderFooterPolicy()
 		);
 	}
@@ -299,9 +300,9 @@ public class DocxRenderer implements Renderer {
 
 					Rectangle2D bounds = paraStyle.getStringBoxSize(BULLET);
 
-					column.addContentOffset(lvl.getPPr().getInd().getLeft().intValue() - lvl.getPPr().getInd().getHanging().intValue());
+					column.addContentOffset(getValue(lvl.getPPr().getInd().getLeft()) - getValue(lvl.getPPr().getInd().getHanging()));
 					column.addContent(bounds.getWidth(), bounds.getHeight(), new DrawStringAction(BULLET, column.getContentWidth(), 0));
-					column.addContentOffset(lvl.getPPr().getInd().getHanging().intValue());
+					column.addContentOffset(getValue(lvl.getPPr().getInd().getHanging()));
 				}
 			}
 		}
@@ -698,6 +699,16 @@ public class DocxRenderer implements Renderer {
 		return newStyle;
 	}
 
+	private Image getImage(String relationshipId) throws IOException {
+		BinaryPart binary = (BinaryPart) relPart.getPart(relationshipId);
+
+		return ImageIO.read(new ByteArrayInputStream(binary.getBytes()));
+	}
+
+	private int getValue(BigInteger bi) {
+		return (bi == null) ? 0 : bi.intValue();
+	}
+
 	private void renderActionsForLine(Column column) {
 		renderActionsForLine(column, false);
 	}
@@ -772,11 +783,5 @@ public class DocxRenderer implements Renderer {
 		} catch (IOException ioe) {
 			LOG.error("Error reading image", ioe);
 		}
-	}
-
-	private Image getImage(String relationshipId) throws IOException {
-		BinaryPart binary = (BinaryPart) relPart.getPart(relationshipId);
-
-		return ImageIO.read(new ByteArrayInputStream(binary.getBytes()));
 	}
 }
