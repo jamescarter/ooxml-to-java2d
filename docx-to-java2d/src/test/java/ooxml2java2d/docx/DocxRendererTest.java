@@ -58,6 +58,7 @@ public class DocxRendererTest {
 	private static final File TEST_PAGE_BREAK_OVERFLOW = new File("src/test/resources/docx/page_break_overflow.docx");
 	private static final File TEST_PAGE_BREAK_TABLE_OVERFLOW = new File("src/test/resources/docx/page_break_table_overflow.docx");
 	private static final File TEST_PAGE_BREAK_TABLE_OVERFLOW2 = new File("src/test/resources/docx/page_break_table_overflow2.docx");
+	private static final File TEST_PAGE_BREAK_TABLE_NESTED = new File("src/test/resources/docx/page_break_table_nested.docx");
 	private static final File TEST_EMPTY_PARAGRAPH = new File("src/test/resources/docx/empty_paragraph.docx");
 	private static final File TEST_PARAGRAPH_BREAK = new File("src/test/resources/docx/paragraph_break.docx");
 	private static final File TEST_PARAGRAPH_SPACING = new File("src/test/resources/docx/paragraph_spacing.docx");
@@ -592,6 +593,38 @@ public class DocxRendererTest {
 		for (int i = 1; i < actions.size(); i++) {
 			assertEquals(baseY, actions.get(i).getY());
 		}
+	}
+
+	@Test
+	public void testPageBreakTableNested() throws IOException {
+		new DocxRenderer(TEST_PAGE_BREAK_TABLE_NESTED).render(builder);
+
+		List<MockGraphics2D> pages = builder.getPages();
+
+		// Check that the second page has the content we're expecting
+		assertEquals(2, pages.size());
+
+		List<DrawStringAction> actions = pages.get(1).getActions(DrawStringAction.class);
+
+		DrawStringAction c = actions.get(0);
+		DrawStringAction d = actions.get(0);
+		DrawStringAction e = actions.get(0);
+		DrawStringAction g = actions.get(0);
+		DrawStringAction f = actions.get(0);
+		DrawStringAction h = actions.get(0);
+
+		// check row 2 lines up horizontally
+		assertEquals(c.getY(), e.getY());
+		assertEquals(c.getY(), g.getY());
+
+		// check row 3 lines up horizontally
+		assertEquals(d.getY(), f.getY());
+		assertEquals(d.getY(), h.getY());
+
+		// check columns line up vertically
+		assertEquals(c.getX(), d.getX());
+		assertEquals(e.getX(), f.getX());
+		assertEquals(g.getX(), h.getX());
 	}
 
 	@Test

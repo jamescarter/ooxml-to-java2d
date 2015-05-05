@@ -89,6 +89,10 @@ public class Column {
 		contentWidth += offset;
 	}
 
+	public void addContent(TableRow row) {
+		actions.add(row);
+	}
+
 	public void addAction(Object action) {
 		actions.add(action);
 	}

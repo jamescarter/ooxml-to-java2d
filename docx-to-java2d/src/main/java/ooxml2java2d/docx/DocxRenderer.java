@@ -40,6 +40,7 @@ import ooxml2java2d.docx.internal.FontConfig;
 import ooxml2java2d.docx.internal.FontStyle;
 import ooxml2java2d.docx.internal.PageLayout;
 import ooxml2java2d.docx.internal.ParagraphStyle;
+import ooxml2java2d.docx.internal.TableRow;
 
 import org.apache.commons.lang.StringUtils;
 import org.docx4j.dml.CTPositiveSize2D;
@@ -493,16 +494,11 @@ public class DocxRenderer implements Renderer {
 
 				// Identify if any content was kept across the page folder
 				if (cacheColumns.size() > 0) {
-					createPageFromLayout();
-
-					int start = yOffset; // start every column from the same position
-					maxYOffset = start;
-
-					for (Column cacheColumn : cacheColumns) {
-						cacheColumn.setCacheOverPageFold(false);
-						yOffset = start;
-						renderActionsForLine(cacheColumn);
-						maxYOffset = Math.max(maxYOffset, yOffset);
+					if (column.isCachedOverPageFold()) {
+						column.addContent(new TableRow(cacheColumns));
+					} else {
+						createPageFromLayout();
+						renderColumns(cacheColumns);
 					}
 				} else {
 					// Set the next content that's output to start after the last row
@@ -758,10 +754,28 @@ public class DocxRenderer implements Renderer {
 					di.getWidth(),
 					di.getHeight()
 				);
+			} else if (obj instanceof TableRow) {
+				TableRow row = (TableRow) obj;
+
+				renderColumns(row.getColumns());
 			}
 		}
 
 		column.reset();
+	}
+
+	private void renderColumns(List<Column> cacheColumns) {
+		int start = yOffset; // start every column from the same position
+		int maxYOffset = start;
+
+		for (Column cacheColumn : cacheColumns) {
+			cacheColumn.setCacheOverPageFold(false);
+			yOffset = start;
+			renderActionsForLine(cacheColumn);
+			maxYOffset = Math.max(maxYOffset, yOffset);
+		}
+
+		yOffset = maxYOffset;
 	}
 
 	private void renderImage(String relationshipId, int x, int y, int width, int height) {
