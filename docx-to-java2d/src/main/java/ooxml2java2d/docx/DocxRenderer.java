@@ -498,7 +498,7 @@ public class DocxRenderer implements Renderer {
 						column.addContent(new TableRow(cacheColumns));
 					} else {
 						createPageFromLayout();
-						renderColumns(cacheColumns);
+						renderColumns(cacheColumns, true);
 					}
 				} else {
 					// Set the next content that's output to start after the last row
@@ -757,21 +757,21 @@ public class DocxRenderer implements Renderer {
 			} else if (obj instanceof TableRow) {
 				TableRow row = (TableRow) obj;
 
-				renderColumns(row.getColumns());
+				renderColumns(row.getColumns(), forceOntoCurrentPage);
 			}
 		}
 
 		column.reset();
 	}
 
-	private void renderColumns(List<Column> cacheColumns) {
+	private void renderColumns(List<Column> cacheColumns, boolean forceOntoCurrentPage) {
 		int start = yOffset; // start every column from the same position
 		int maxYOffset = start;
 
 		for (Column cacheColumn : cacheColumns) {
 			cacheColumn.setCacheOverPageFold(false);
 			yOffset = start;
-			renderActionsForLine(cacheColumn);
+			renderActionsForLine(cacheColumn, forceOntoCurrentPage);
 			maxYOffset = Math.max(maxYOffset, yOffset);
 		}
 

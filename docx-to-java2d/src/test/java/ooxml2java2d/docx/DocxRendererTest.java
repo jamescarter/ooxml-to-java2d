@@ -39,6 +39,7 @@ public class DocxRendererTest {
 	private static final File TEST_HEADER = new File("src/test/resources/docx/header.docx");
 	private static final File TEST_HEADER_FIRST_EVEN_ODD = new File("src/test/resources/docx/header_first_even_odd.docx");
 	private static final File TEST_FOOTER_FIRST_EVEN_ODD = new File("src/test/resources/docx/footer_first_even_odd.docx");
+	private static final File TEST_FOOTER_TABLE = new File("src/test/resources/docx/footer_table.docx");
 	private static final File TEST_FONT_SIZE = new File("src/test/resources/docx/font_size.docx");
 	private static final File TEST_FONT_STYLE = new File("src/test/resources/docx/font_style.docx");
 	private static final File TEST_LINE_HEIGHT = new File("src/test/resources/docx/line_height.docx");
@@ -162,6 +163,18 @@ public class DocxRendererTest {
 		assertEquals("First", p1Footer.getText());
 		assertEquals("Even", p2Footer.getText());
 		assertEquals("Odd", p3Footer.getText());
+	}
+
+	@Test
+	public void testFooterTable() throws IOException {
+		new DocxRenderer(TEST_FOOTER_TABLE).render(builder);
+
+		List<DrawStringAction> actions = builder.getPages().get(0).getActions(DrawStringAction.class);
+
+		assertEquals("A", actions.get(0).getText());
+		assertEquals("B", actions.get(1).getText());
+		assertEquals("C", actions.get(2).getText());
+		assertEquals("D", actions.get(3).getText());
 	}
 
 	@Test
