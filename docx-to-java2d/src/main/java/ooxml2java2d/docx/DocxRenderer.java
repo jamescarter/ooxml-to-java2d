@@ -44,7 +44,7 @@ import ooxml2java2d.docx.internal.TableRow;
 
 import org.apache.commons.lang.StringUtils;
 import org.docx4j.dml.CTPositiveSize2D;
-import org.docx4j.dml.Graphic;
+import org.docx4j.dml.GraphicData;
 import org.docx4j.dml.wordprocessingDrawing.Anchor;
 import org.docx4j.dml.wordprocessingDrawing.Inline;
 import org.docx4j.model.listnumbering.AbstractListNumberingDefinition;
@@ -513,7 +513,7 @@ public class DocxRenderer implements Renderer {
 			if (obj instanceof Inline) {
 				Inline inline = (Inline) obj;
 
-				processGraphic(inline.getExtent(), inline.getGraphic(), column);
+				processGraphic(inline.getExtent(), inline.getGraphic().getGraphicData(), column);
 			} else if (obj instanceof Anchor) {
 				Anchor anchor = (Anchor) obj;
 
@@ -521,8 +521,8 @@ public class DocxRenderer implements Renderer {
 					// position image absolutely, no need to add to column
 					int width = (int) anchor.getExtent().getCx() / EMU_DIVISOR;
 					int height = (int) anchor.getExtent().getCy() / EMU_DIVISOR;
-					int x = anchor.getPositionH().getPosOffset() / EMU_DIVISOR;
-					int y = anchor.getPositionV().getPosOffset() / EMU_DIVISOR;
+					int x = getValue(anchor.getPositionH().getPosOffset()) / EMU_DIVISOR;
+					int y = getValue(anchor.getPositionV().getPosOffset()) / EMU_DIVISOR;
 
 					renderImage(
 						anchor.getGraphic().getGraphicData().getPic().getBlipFill().getBlip().getEmbed(),
@@ -532,7 +532,7 @@ public class DocxRenderer implements Renderer {
 						height
 					);
 				} else {
-					processGraphic(anchor.getExtent(), anchor.getGraphic(), column);
+					processGraphic(anchor.getExtent(), anchor.getGraphic().getGraphicData(), column);
 				}
 			} else {
 				LOG.debug("Unhandled drawing object " + obj.getClass());
@@ -540,7 +540,7 @@ public class DocxRenderer implements Renderer {
 		}
 	}
 
-	private void processGraphic(CTPositiveSize2D extent, Graphic graphic, Column column) {
+	private void processGraphic(CTPositiveSize2D extent, GraphicData graphicData, Column column) {
 		int width = (int) extent.getCx() / EMU_DIVISOR;
 		int height = (int) extent.getCy() / EMU_DIVISOR;
 
@@ -548,9 +548,15 @@ public class DocxRenderer implements Renderer {
 			renderActionsForLine(column);
 		}
 
-		String rId = graphic.getGraphicData().getPic().getBlipFill().getBlip().getEmbed();
+		// TODO: handle null pic reference
+		if (graphicData.getPic() != null) {
+			String rId = graphicData.getPic().getBlipFill().getBlip().getEmbed();
 
-		column.addContentForced(width, height, new DrawImageAction(rId, width, height, column.getContentWidth()));
+			// TODO: Add support for external reference
+			if (!rId.isEmpty()) {
+				column.addContentForced(width, height, new DrawImageAction(rId, width, height, column.getContentWidth()));
+			}
+		}
 	}
 
 	private ParagraphStyle getStyleById(ParagraphStyle baseStyle, String styleId) {
@@ -699,6 +705,10 @@ public class DocxRenderer implements Renderer {
 		BinaryPart binary = (BinaryPart) relPart.getPart(relationshipId);
 
 		return ImageIO.read(new ByteArrayInputStream(binary.getBytes()));
+	}
+
+	private int getValue(Integer i) {
+		return (i == null) ? 0 : i;
 	}
 
 	private int getValue(BigInteger bi) {
