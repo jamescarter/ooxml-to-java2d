@@ -42,8 +42,6 @@ import java.text.AttributedCharacterIterator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import ooxml2java2d.docx.internal.DrawImageAction;
-import ooxml2java2d.docx.internal.DrawStringAction;
 
 public class MockGraphics2D extends Graphics2D {
 	private List<Object> actions = new ArrayList<>();
@@ -317,7 +315,7 @@ public class MockGraphics2D extends Graphics2D {
 
 	@Override
 	public boolean drawImage(Image img, int x, int y, int width, int height, ImageObserver observer) {
-		actions.add(new DrawImageAction(null, width, height, x));
+		actions.add(new DrawImageAction(x, y, width, height));
 
 		return false;
 	}

@@ -14,47 +14,29 @@
  * limitations under the License.
  */
 
-package ooxml2java2d.docx.internal;
+package ooxml2java2d.docx.internal.content;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
-public class DrawImageAction {
+public class ImageContent extends Content {
 	private String relationshipId;
-	private int width;
-	private int height;
-	private int x;
 
-	public DrawImageAction(String relationshipId, int width, int height, int x) {
+	public ImageContent(int width, int height, String relationshipId) {
+		super(width, height);
 		this.relationshipId = relationshipId;
-		this.width = width;
-		this.height = height;
-		this.x = x;
 	}
 
 	public String getRelationshipId() {
 		return relationshipId;
 	}
 
-	public int getX() {
-		return x;
-	}
-
-	public int getWidth() {
-		return width;
-	}
-
-	public int getHeight() {
-		return height;
-	}
-
 	@Override
 	public String toString() {
 		return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
+			.append("width", getWidth())
+			.append("height", getHeight())
 			.append("relationshipId", relationshipId)
-			.append("x", x)
-			.append("width", width)
-			.append("height", height)
 			.toString();
 	}
 }

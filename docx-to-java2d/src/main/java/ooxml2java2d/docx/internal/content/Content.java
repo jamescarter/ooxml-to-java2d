@@ -14,18 +14,22 @@
  * limitations under the License.
  */
 
-package ooxml2java2d.docx.internal;
+package ooxml2java2d.docx.internal.content;
 
-import java.util.List;
+public class Content {
+	private int width;
+	private int height;
 
-public class TableRow {
-	private List<Column> columns;
-
-	public TableRow(List<Column> columns) {
-		this.columns = columns;
+	public Content(int width, int height) {
+		this.width = width;
+		this.height = height;
 	}
 
-	public List<Column> getColumns() {
-		return columns;
+	public int getWidth() {
+		return width;
+	}
+
+	public int getHeight() {
+		return height;
 	}
 }

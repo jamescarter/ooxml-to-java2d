@@ -14,40 +14,27 @@
  * limitations under the License.
  */
 
-package ooxml2java2d.docx.internal;
+package ooxml2java2d.docx.internal.content;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
-public class DrawStringAction {
-	private String text;
-	private int x;
-	private int y;
+public class BlankRow implements Row {
+	private int contentHeight;
 
-	public DrawStringAction(String text, int x, int y) {
-		this.text = text;
-		this.x = x;
-		this.y = y;
+	public BlankRow(int contentHeight) {
+		this.contentHeight = contentHeight;
 	}
 
-	public String getText() {
-		return text;
-	}
-
-	public int getX() {
-		return x;
-	}
-
-	public int getY() {
-		return y;
+	@Override
+	public int getContentHeight() {
+		return contentHeight;
 	}
 
 	@Override
 	public String toString() {
 		return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
-			.append("text", text)
-			.append("x", x)
-			.append("y", y)
+			.append("contentHeight", contentHeight)
 			.toString();
 	}
 }

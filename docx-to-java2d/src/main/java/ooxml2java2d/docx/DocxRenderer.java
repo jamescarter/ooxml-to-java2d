@@ -33,14 +33,18 @@ import java.util.List;
 import ooxml2java2d.GraphicsBuilder;
 import ooxml2java2d.Renderer;
 import ooxml2java2d.docx.internal.Alignment;
-import ooxml2java2d.docx.internal.Column;
-import ooxml2java2d.docx.internal.DrawImageAction;
-import ooxml2java2d.docx.internal.DrawStringAction;
 import ooxml2java2d.docx.internal.FontConfig;
 import ooxml2java2d.docx.internal.FontStyle;
 import ooxml2java2d.docx.internal.PageLayout;
 import ooxml2java2d.docx.internal.ParagraphStyle;
-import ooxml2java2d.docx.internal.TableRow;
+import ooxml2java2d.docx.internal.content.BlankRow;
+import ooxml2java2d.docx.internal.content.Column;
+import ooxml2java2d.docx.internal.content.Content;
+import ooxml2java2d.docx.internal.content.ImageContent;
+import ooxml2java2d.docx.internal.content.Line;
+import ooxml2java2d.docx.internal.content.Row;
+import ooxml2java2d.docx.internal.content.StringContent;
+import ooxml2java2d.docx.internal.content.TableRow;
 
 import org.apache.commons.lang.StringUtils;
 import org.docx4j.dml.CTPositiveSize2D;
@@ -237,7 +241,7 @@ public class DocxRenderer implements Renderer {
 			yOffset = layout.getHeight() - layout.getFooterMargin() - footerCol.getContentHeight();
 
 			// force footer content onto current page, otherwise it may be pushed onto a new page
-			renderActionsForLine(footerCol, true);
+			render(footerCol, true);
 		}
 
 		++page;
@@ -281,9 +285,7 @@ public class DocxRenderer implements Renderer {
 
 		paraStyle = getParagraphStyle(defaultParaStyle, properties);
 
-		if (yOffset != layout.getTopMargin()) {
-			yOffset += paraStyle.getSpaceBefore();
-		}
+		column.addVerticalSpace(paraStyle.getSpaceBefore());
 
 		if (properties != null && properties.getNumPr() != null) {
 			NumPr numberingProperties = properties.getNumPr();
@@ -301,22 +303,22 @@ public class DocxRenderer implements Renderer {
 
 					Rectangle2D bounds = paraStyle.getStringBoxSize(BULLET);
 
-					column.addContentOffset(getValue(lvl.getPPr().getInd().getLeft()) - getValue(lvl.getPPr().getInd().getHanging()));
-					column.addContent(bounds.getWidth(), bounds.getHeight(), new DrawStringAction(BULLET, column.getContentWidth(), 0));
-					column.addContentOffset(getValue(lvl.getPPr().getInd().getHanging()));
+					column.addHorizontalSpace(getValue(lvl.getPPr().getInd().getLeft()) - getValue(lvl.getPPr().getInd().getHanging()), paraStyle.getLineSpacing());
+					column.addContent(new StringContent((int) bounds.getWidth(), (int) bounds.getHeight(), BULLET), paraStyle.getLineSpacing());
+					column.addHorizontalSpace(getValue(lvl.getPPr().getInd().getHanging()), paraStyle.getLineSpacing());
 				}
 			}
 		}
 
 		if (properties != null && p.getContent().size() == 0) {
-			yOffset += paraStyle.getStringBoxSize("").getHeight();
+			column.addVerticalSpace((int) paraStyle.getStringBoxSize("").getHeight());
 		} else {
 			iterateContentParts(p, column);
 		}
 
-		renderActionsForLine(column);
+		column.addVerticalSpace(paraStyle.getSpaceAfter());
 
-		yOffset += paraStyle.getSpaceAfter();
+		render(column, false);
 
 		if (properties != null && properties.getSectPr() != null) {
 			// The presence of SectPr indicates the next part should be started on a new page with a different layout
@@ -341,7 +343,7 @@ public class DocxRenderer implements Renderer {
 		runStyle = newRunStyle;
 
 		if (run.getRPr() != null && run.getContent().size() == 0) {
-			yOffset += paraStyle.getStringBoxSize("").getHeight();
+			column.addVerticalSpace((int) paraStyle.getStringBoxSize("").getHeight());
 		} else {
 			iterateContentParts(run, column);
 		}
@@ -350,11 +352,11 @@ public class DocxRenderer implements Renderer {
 	private void processBreak(Br br, Column column) {
 		if (br.getType() == null) {
 			// paragraph break
-			renderActionsForLine(column);
+			render(column, false);
 		} else {
 			switch (br.getType()) {
 				case PAGE:
-					renderActionsForLine(column);
+					render(column, false);
 					createPageFromLayout();
 				break;
 				default:
@@ -365,9 +367,10 @@ public class DocxRenderer implements Renderer {
 
 	private void processText(String text, Column column) {
 		Rectangle2D bounds = runStyle.getStringBoxSize(text);
+		Line line = column.getCurrentLine();
 
-		if (column.canFitContent(bounds.getWidth())) {
-			column.addContent(bounds.getWidth(), bounds.getHeight(), new DrawStringAction(text, column.getContentWidth(), 0));
+		if (line.canFitContent(bounds.getWidth())) {
+			column.addContent(new StringContent((int) bounds.getWidth(), (int) bounds.getHeight(), text), paraStyle.getLineSpacing());
 		} else {
 			// Text needs wrapping, work out how to fit it into multiple lines
 			// TODO: optimize word-wrapping routine
@@ -380,9 +383,9 @@ public class DocxRenderer implements Renderer {
 				} else {
 					bounds = runStyle.getStringBoxSize(newText + " " + words[i]);
 				}
-				
+
 				// Check if adding the word will push it over the page content width
-				if (!column.canFitContent(bounds.getWidth())) {
+				if (!line.canFitContent(bounds.getWidth())) {
 					// If this is the first word, break it up
 					if (i == 0) {
 						char[] chars = text.toCharArray();
@@ -390,7 +393,7 @@ public class DocxRenderer implements Renderer {
 						for (int k = 0; k < chars.length; k++) {
 							bounds = runStyle.getStringBoxSize(newText + chars[k]);
 
-							if (column.canFitContent(bounds.getWidth())) {
+							if (line.canFitContent(bounds.getWidth())) {
 								newText += chars[k];
 							} else {
 								break;
@@ -414,17 +417,24 @@ public class DocxRenderer implements Renderer {
 			if (nextText.equals(text)) {
 				LOG.error("Unable to fit content, skipping: " + nextText);
 			} else {
-				column.addContent(bounds.getWidth(), bounds.getHeight(), new DrawStringAction(newText, column.getContentWidth(), 0));
+				column.addContent(new StringContent((int) bounds.getWidth(), (int) bounds.getHeight(), newText), 0);
+				column.addVerticalSpace(0);
 
-				renderActionsForLine(column);
+				render(column, false);
 				processText(nextText, column);
 			}
 		}
 	}
 
 	private void processTab(Tab tab, Column column) {
-		// TODO: check if this should cause a new line to be created
-		column.addContentOffset(TAB_WIDTH - (column.getContentWidth() % TAB_WIDTH));
+		Line line = column.getCurrentLine();
+		int tabWidth = TAB_WIDTH - (line.getContentWidth() % TAB_WIDTH);
+
+		if (line.canFitContent(tabWidth)) {
+			column.addContent(new Content(tabWidth, 0), paraStyle.getLineSpacing());
+		} else {
+			column.addContent(new Content(TAB_WIDTH, 0), paraStyle.getLineSpacing());
+		}
 	}
 
 	private void processTable(Tbl table, Column column) {
@@ -483,7 +493,7 @@ public class DocxRenderer implements Renderer {
 							maxYOffset = Math.max(maxYOffset, yOffset);
 
 							// If the column still has content, it must need to break onto the next page
-							if (cellColumn.hasContent()) {
+							if (!cellColumn.isEmpty()) {
 								cacheColumns.add(cellColumn);
 							}
 						}
@@ -494,11 +504,11 @@ public class DocxRenderer implements Renderer {
 
 				// Identify if any content was kept across the page folder
 				if (cacheColumns.size() > 0) {
-					if (column.isCachedOverPageFold()) {
-						column.addContent(new TableRow(cacheColumns));
-					} else {
+					column.addTableRow(new TableRow(cacheColumns));
+
+					if (!column.isCachedOverPageFold()) {
 						createPageFromLayout();
-						renderColumns(cacheColumns, true);
+						render(column, true);
 					}
 				} else {
 					// Set the next content that's output to start after the last row
@@ -544,17 +554,13 @@ public class DocxRenderer implements Renderer {
 		int width = (int) extent.getCx() / EMU_DIVISOR;
 		int height = (int) extent.getCy() / EMU_DIVISOR;
 
-		if (!column.canFitContent(width)) {
-			renderActionsForLine(column);
-		}
-
 		// TODO: handle null pic reference
 		if (graphicData.getPic() != null) {
 			String rId = graphicData.getPic().getBlipFill().getBlip().getEmbed();
 
 			// TODO: Add support for external reference
 			if (!rId.isEmpty()) {
-				column.addContentForced(width, height, new DrawImageAction(rId, width, height, column.getContentWidth()));
+				column.addContentForced(new ImageContent(width, height, rId));
 			}
 		}
 	}
@@ -715,63 +721,85 @@ public class DocxRenderer implements Renderer {
 		return (bi == null) ? 0 : bi.intValue();
 	}
 
-	private void renderActionsForLine(Column column) {
-		renderActionsForLine(column, false);
+	public void render(Column column, boolean forceOntoCurrentPage) {
+		for (Row row : column.getRows()) {
+			// Check if this line will fit onto the current page, otherwise create a new page
+			if (!forceOntoCurrentPage && yOffset + row.getContentHeight() > layout.getHeight() - layout.getBottomMargin()) {
+				if (column.isCachedOverPageFold()) {
+					return;
+				} else {
+					createPageFromLayout();
+				}
+			}
+
+			if (row instanceof Line) {
+				render((Line) row, column.getXOffset());
+			} else if (row instanceof BlankRow) {
+				yOffset += row.getContentHeight();
+			} else if (row instanceof TableRow) {
+				TableRow tableRow = (TableRow) row;
+
+				renderColumns(tableRow.getColumns(), true);
+			} else {
+				LOG.debug("Unhandled row object " + row.getClass());
+			}
+
+			column.removeRow(row);
+		}
 	}
 
-	private void renderActionsForLine(Column column, boolean forceOntoCurrentPage) {
-		// Check if this line will fit onto the current page, otherwise create a new page
-		if (!forceOntoCurrentPage && yOffset + column.getContentHeight() > layout.getHeight() - layout.getBottomMargin()) {
-			if (column.isCachedOverPageFold()) {
-				return;
-			} else {
-				createPageFromLayout();
-			}
-		}
-
-		yOffset += column.getContentHeight();
-		int alignmentOffset = column.getXOffset();
+	public void render(Line line, int initialXOffset) {
+		yOffset += line.getContentHeight();
+		int xOffset = initialXOffset;
 
 		switch (paraStyle.getAlignment()) {
 			case RIGHT:
-				alignmentOffset += column.getWidth() - column.getContentWidth();
+				xOffset += line.getWidth() - line.getContentWidth();
 			break;
 			case CENTER:
-				alignmentOffset += (column.getWidth() - column.getContentWidth()) / 2;
+				xOffset += (line.getWidth() - line.getContentWidth()) / 2;
 			break;
 			default:
 				// default to LEFT aligned
 		}
 
-		for (Object obj : column.getActions()) {
-			if (obj instanceof DrawStringAction) {
-				DrawStringAction ds = (DrawStringAction) obj;
+		for (Object obj : line.getActions()) {
+			if (obj instanceof Content) {
+				Content content = (Content) obj;
 
-				g.drawString(ds.getText(), alignmentOffset + ds.getX(), yOffset);
+				if (obj instanceof StringContent) {
+					StringContent sc = (StringContent) obj;
+
+					g.drawString(sc.getText(), xOffset, yOffset);
+				} else if (obj instanceof ImageContent) {
+					ImageContent di = (ImageContent) obj;
+
+					renderImage(
+						di.getRelationshipId(),
+						xOffset,
+						yOffset - di.getHeight(),
+						di.getWidth(),
+						di.getHeight()
+					);
+				} else if (obj instanceof TableRow) {
+					TableRow row = (TableRow) obj;
+
+					renderColumns(row.getColumns(), true);
+				} else {
+					yOffset += content.getHeight();
+				}
+
+				xOffset += content.getWidth();
 			} else if (obj instanceof Color) {
 				g.setColor((Color) obj);
 			} else if (obj instanceof FontConfig) {
 				FontConfig fc = (FontConfig) obj;
 
 				g.setFont(fc.getFont());
-			} else if (obj instanceof DrawImageAction) {
-				DrawImageAction di = (DrawImageAction) obj;
-
-				renderImage(
-					di.getRelationshipId(),
-					alignmentOffset + di.getX(),
-					yOffset - di.getHeight(),
-					di.getWidth(),
-					di.getHeight()
-				);
-			} else if (obj instanceof TableRow) {
-				TableRow row = (TableRow) obj;
-
-				renderColumns(row.getColumns(), forceOntoCurrentPage);
+			} else {
+				LOG.debug("Unhandled render object " + obj.getClass());
 			}
 		}
-
-		column.reset();
 	}
 
 	private void renderColumns(List<Column> cacheColumns, boolean forceOntoCurrentPage) {
@@ -781,7 +809,7 @@ public class DocxRenderer implements Renderer {
 		for (Column cacheColumn : cacheColumns) {
 			cacheColumn.setCacheOverPageFold(false);
 			yOffset = start;
-			renderActionsForLine(cacheColumn, forceOntoCurrentPage);
+			render(cacheColumn, forceOntoCurrentPage);
 			maxYOffset = Math.max(maxYOffset, yOffset);
 		}
 

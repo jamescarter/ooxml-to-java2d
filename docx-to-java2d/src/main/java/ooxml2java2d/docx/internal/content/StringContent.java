@@ -14,13 +14,29 @@
  * limitations under the License.
  */
 
-package ooxml2java2d.docx.internal;
+package ooxml2java2d.docx.internal.content;
 
-public class ContentTooBigException extends RuntimeException {
-	private static final long serialVersionUID = 7478889922254160774L;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 
-	public ContentTooBigException(String message) {
-		super(message);
+public class StringContent extends Content {
+	private String text;
+
+	public StringContent(int width, int height, String text) {
+		super(width, height);
+		this.text = text;
 	}
 
+	public String getText() {
+		return text;
+	}
+
+	@Override
+	public String toString() {
+		return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
+			.append("width", getWidth())
+			.append("height", getHeight())
+			.append("text", text)
+			.toString();
+	}
 }

@@ -27,9 +27,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
-import ooxml2java2d.docx.internal.DrawImageAction;
-import ooxml2java2d.docx.internal.DrawStringAction;
-
 import org.junit.Before;
 import org.junit.Test;
 

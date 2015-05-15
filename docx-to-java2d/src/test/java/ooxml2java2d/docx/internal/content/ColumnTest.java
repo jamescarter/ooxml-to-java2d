@@ -14,14 +14,11 @@
  * limitations under the License.
  */
 
-package ooxml2java2d.docx;
+package ooxml2java2d.docx.internal.content;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import ooxml2java2d.docx.internal.Column;
-import ooxml2java2d.docx.internal.ContentTooBigException;
-import ooxml2java2d.docx.internal.DrawStringAction;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -36,31 +33,31 @@ public class ColumnTest {
 
 	@Test
 	public void testCanFitContent() {
-		assertTrue(column.canFitContent(10));
-		assertTrue(column.canFitContent(50));
-		assertTrue(column.canFitContent(99));
-		assertTrue(column.canFitContent(100));
-		assertFalse(column.canFitContent(101));
-		assertFalse(column.canFitContent(110));
+		assertTrue(column.getCurrentLine().canFitContent(10));
+		assertTrue(column.getCurrentLine().canFitContent(50));
+		assertTrue(column.getCurrentLine().canFitContent(99));
+		assertTrue(column.getCurrentLine().canFitContent(100));
+		assertFalse(column.getCurrentLine().canFitContent(101));
+		assertFalse(column.getCurrentLine().canFitContent(110));
 	}
 
 	@Test
 	public void testAddContent() {
-		column.addContent(10, 10, new DrawStringAction("Text", 0, 0));
-		column.addContent(90, 10, new DrawStringAction("Text", 0, 0));
+		column.addContent(new StringContent(10, 10, "Text"), 0);
+		column.addContent(new StringContent(90, 10, "Text"), 0);
 	}
 
 	@Test(expected = ContentTooBigException.class)
 	public void testContentTooBig() {
-		column.addContent(101, 10, new DrawStringAction("Text", 0, 0));
+		column.addContent(new StringContent(101, 10, "Text"), 0);
 	}
 
 	@Test
 	public void testContentWidthAndReset() {
-		column.addContentOffset(50);
-		assertEquals(50, column.getContentWidth());
+		column.addHorizontalSpace(50, 0);
+		assertEquals(50, column.getCurrentLine().getContentWidth());
 
-		column.reset();
-		assertEquals(0, column.getContentWidth());
+		column.removeRow(column.getCurrentLine());
+		assertEquals(0, column.getCurrentLine().getContentWidth());
 	}
 }
