@@ -60,6 +60,7 @@ import org.docx4j.openpackaging.parts.WordprocessingML.BinaryPart;
 import org.docx4j.openpackaging.parts.WordprocessingML.FooterPart;
 import org.docx4j.openpackaging.parts.WordprocessingML.HeaderPart;
 import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
+import org.docx4j.openpackaging.parts.relationships.Namespaces;
 import org.docx4j.openpackaging.parts.relationships.RelationshipsPart;
 import org.docx4j.wml.Br;
 import org.docx4j.wml.ContentAccessor;
@@ -89,12 +90,14 @@ import org.slf4j.LoggerFactory;
 
 import javax.imageio.ImageIO;
 import javax.xml.bind.JAXBElement;
+import javax.xml.namespace.QName;
 
 /**
  * Converts a Microsoft Word (DOCX) document to Java2D commands.
  */
 public class DocxRenderer implements Renderer {
 	private static final Logger LOG = LoggerFactory.getLogger(DocxRenderer.class);
+	private static final QName QNAME_TEXT = new QName(Namespaces.NS_WORD12, "t");
 	private static final int TAB_WIDTH = 712;
 	private static final int EMU_DIVISOR = 635; // divide emu by this to convert to dxa
 	private static final String BULLET = new Character((char) 0x2022).toString();
@@ -263,7 +266,9 @@ public class DocxRenderer implements Renderer {
 				JAXBElement<?> element = (JAXBElement<?>) obj;
 
 				if (element.getDeclaredType().equals(Text.class)) {
-					processText(((Text) element.getValue()).getValue(), column);
+					if (element.getName().equals(QNAME_TEXT)) {
+						processText(((Text) element.getValue()).getValue(), column);
+					}
 				} else if (element.getDeclaredType().equals(Tab.class)) {
 					processTab((Tab) element.getValue(), column);
 				} else if (element.getDeclaredType().equals(Tbl.class)) {
