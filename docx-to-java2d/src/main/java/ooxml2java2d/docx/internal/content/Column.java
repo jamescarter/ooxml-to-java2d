@@ -16,6 +16,7 @@
 
 package ooxml2java2d.docx.internal.content;
 
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,13 +29,19 @@ import org.apache.commons.lang.builder.ToStringStyle;
 public class Column {
 	private int xOffset;
 	private int width;
-	private boolean isCachedOverPageFold;
+	private Color fill;
+	private boolean isBuffered;
 	private List<Row> rows = new ArrayList<>();
 	private Line line;
 
 	public Column(int xOffset, int width) {
+		this(xOffset, width, null);
+	}
+
+	public Column(int xOffset, int width, Color fill) {
 		this.xOffset = xOffset;
 		this.width = width;
+		this.fill = fill;
 	}
 
 	public int getXOffset() {
@@ -43,6 +50,10 @@ public class Column {
 
 	public int getWidth() {
 		return width;
+	}
+
+	public Color getFill() {
+		return fill;
 	}
 
 	public int getContentHeight() {
@@ -69,15 +80,18 @@ public class Column {
 	}
 
 	/**
-	 * Sets whether the content should be temporarily cached across pages folds
-	 * @param isCachedOverPageFold if the content should be cached across page folds
+	 * Sets whether the content is buffered instead of rendering as soon as possible
+	 * @param isBuffered Whether the content is buffered
 	 */
-	public void setCacheOverPageFold(boolean isCachedOverPageFold) {
-		this.isCachedOverPageFold = isCachedOverPageFold;
+	public void setBuffered(boolean isBuffered) {
+		this.isBuffered = isBuffered;
 	}
 
 	public void addVerticalSpace(int height) {
-		rows.add(new BlankRow(height));
+		if (height > 0) {
+			rows.add(new BlankRow(height));
+		}
+
 		line = null;
 	}
 
@@ -115,8 +129,8 @@ public class Column {
 		}
 	}
 
-	public boolean isCachedOverPageFold() {
-		return isCachedOverPageFold;
+	public boolean isBuffered() {
+		return isBuffered;
 	}
 
 	public boolean isEmpty() {
@@ -128,7 +142,8 @@ public class Column {
 		return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
 			.append("xOffset", xOffset)
 			.append("width", width)
-			.append("isCachedOverPageFold", isCachedOverPageFold)
+			.append("fill", fill)
+			.append("isBuffered", isBuffered)
 			.append("rows", rows)
 			.toString();
 	}

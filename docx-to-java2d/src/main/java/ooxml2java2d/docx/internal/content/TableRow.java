@@ -34,13 +34,13 @@ public class TableRow implements Row {
 
 	@Override
 	public int getContentHeight() {
-		int contentHeight = 0;
+		int maxHeight = 0;
 
 		for (Column column : columns) {
-			contentHeight += column.getContentHeight();
+			maxHeight = Math.max(maxHeight, column.getContentHeight());
 		}
 
-		return contentHeight;
+		return maxHeight;
 	}
 
 	@Override

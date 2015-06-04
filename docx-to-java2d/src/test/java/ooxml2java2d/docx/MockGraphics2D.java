@@ -377,7 +377,7 @@ public class MockGraphics2D extends Graphics2D {
 
 	@Override
 	public void fillRect(int x, int y, int width, int height) {
-
+		actions.add(new FillRect(x, y, width, height));
 	}
 
 	@Override

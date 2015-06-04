@@ -47,6 +47,14 @@ public class ColumnTest {
 		column.addContent(new StringContent(90, 10, "Text"), 0);
 	}
 
+	@Test
+	public void testAddVerticalSpace() {
+		column.addVerticalSpace(0);
+		assertTrue(column.isEmpty());
+		column.addVerticalSpace(100);
+		assertFalse(column.isEmpty());
+	}
+	
 	@Test(expected = ContentTooBigException.class)
 	public void testContentTooBig() {
 		column.addContent(new StringContent(101, 10, "Text"), 0);

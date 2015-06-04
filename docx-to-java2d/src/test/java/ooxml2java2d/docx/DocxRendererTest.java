@@ -61,6 +61,7 @@ public class DocxRendererTest {
 	private static final File TEST_PARAGRAPH_BREAK = new File("src/test/resources/docx/paragraph_break.docx");
 	private static final File TEST_PARAGRAPH_SPACING = new File("src/test/resources/docx/paragraph_spacing.docx");
 	private static final File TEST_LIST_BULLET = new File("src/test/resources/docx/list_bullet.docx");
+	private static final File TEST_FILL_COLOR_TABLE = new File("src/test/resources/docx/fill_color_table.docx");
 	private MockGraphicsBuilder builder;
 
 	@Before
@@ -707,7 +708,7 @@ public class DocxRendererTest {
 		DrawStringAction t4 = actions.get(8);
 		DrawStringAction t5 = actions.get(10);
 
-		assertEquals("•", b1.getText());
+		assertEquals(new Character((char) 0x2022).toString(), b1.getText());
 		assertEquals(b1.getText(), b2.getText());
 		assertEquals(b1.getText(), b3.getText());
 		assertEquals(b1.getText(), b4.getText());
@@ -724,6 +725,35 @@ public class DocxRendererTest {
 		assertEquals(2658, t3.getX());
 		assertEquals(t2.getX(), t4.getX());
 		assertEquals(t1.getX(), t5.getX());
+	}
+
+	@Test
+	public void testFillColorTable() throws IOException {
+		new DocxRenderer(TEST_FILL_COLOR_TABLE).render(builder);
+
+		List<FillRect> actions = builder.getPages().get(0).getActions(FillRect.class);
+
+		assertEquals(3, actions.size());
+
+		FillRect r1 = actions.get(0);
+		FillRect r2 = actions.get(1);
+		FillRect r3 = actions.get(2);
+
+		int x = r1.getX();
+		int y = r1.getY();
+
+		assertEquals(3212, r1.getWidth());
+		assertEquals(550, r1.getHeight());
+
+		assertTrue(r2.getX() > x);
+		assertEquals(y, r2.getY());
+		assertEquals(6425, r2.getWidth());
+		assertEquals(550, r2.getHeight());
+
+		assertEquals(x, r3.getX());
+		assertTrue(r3.getY() > y);
+		assertEquals(3212, r3.getWidth());
+		assertEquals(825, r3.getHeight());
 	}
 
 	private void assertFontAttributes(Font font, Object ... expectedStyles) {

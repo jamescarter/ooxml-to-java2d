@@ -113,6 +113,7 @@ public class DocxRenderer implements Renderer {
 	private ParagraphStyle paraStyle;
 	private ParagraphStyle runStyle;
 	private RelationshipsPart relPart;
+	private int tableRowNesting = 0;
 
 	public DocxRenderer(File docx) throws IOException {
 		try {
@@ -228,18 +229,15 @@ public class DocxRenderer implements Renderer {
 		}
 
 		if (footer != null) {
-			// set yOffset to end of page to force Column to cache contents
-			yOffset = layout.getHeight();
 			relPart = footer.getRelationshipsPart(false);
 
-			// Create new cached column for footer content
 			Column footerCol = new Column(layout.getLeftMargin(), layout.getWidth());
 
-			footerCol.setCacheOverPageFold(true);
+			footerCol.setBuffered(true);
 
 			iterateContentParts(footer, footerCol);
 
-			footerCol.setCacheOverPageFold(false);
+			footerCol.setBuffered(false);
 
 			yOffset = layout.getHeight() - layout.getFooterMargin() - footerCol.getContentHeight();
 
@@ -452,21 +450,14 @@ public class DocxRenderer implements Renderer {
 		for (Object tblObj : table.getContent()) {
 			if (tblObj instanceof Tr) {
 				Tr tableRow = (Tr) tblObj;
-				List<Integer> columnYOffsets = new ArrayList<>();
 				int xOffset = column.getXOffset();
 				int col = 0;
-
-				// Set all columns y-offsets to the same position so they're all in-line
-				for (int i = 0; i < columnWidths.size(); i++) {
-					columnYOffsets.add(yOffset);
-				}
-
-				List<Column> cacheColumns = new ArrayList<>();
-				int maxYOffset = 0;
+				List<Column> cells = new ArrayList<>();
 
 				for (Object rowObj : tableRow.getContent()) {
 					if (rowObj instanceof JAXBElement) {
 						JAXBElement<?> element = (JAXBElement<?>) rowObj;
+						Color fill = null;
 
 						if (element.getDeclaredType().equals(Tc.class)) {
 							Tc tableCell = (Tc) element.getValue();
@@ -475,50 +466,35 @@ public class DocxRenderer implements Renderer {
 							// Horizontal cell merge
 							if (tableCell.getTcPr().getGridSpan() != null) {
 								int mergeCols = tableCell.getTcPr().getGridSpan().getVal().intValue();
-								width = columnWidths.get(col);
 
 								for (int i = 0; i < mergeCols - 1; i++) {
 									width += columnWidths.get(++col);
 								}
 							}
 
-							Column cellColumn = new Column(xOffset, width);
-
-							cellColumn.setCacheOverPageFold(true);
-
-							// restore this columns previous y-offset before processing
-							yOffset = columnYOffsets.get(col);
-
-							iterateContentParts(tableCell, cellColumn);
-
-							// remember where this columns content got to
-							columnYOffsets.set(col, yOffset);
-							xOffset += cellColumn.getWidth();
-							++col;
-							maxYOffset = Math.max(maxYOffset, yOffset);
-
-							// If the column still has content, it must need to break onto the next page
-							if (!cellColumn.isEmpty()) {
-								cacheColumns.add(cellColumn);
+							if (tableCell.getTcPr().getShd() != null) {
+								fill = getColor(tableCell.getTcPr().getShd().getFill());
 							}
+
+							Column cell = new Column(xOffset, width, fill);
+
+							cell.setBuffered(true);
+
+							iterateContentParts(tableCell, cell);
+
+							cell.setBuffered(false);
+
+							xOffset += cell.getWidth();
+							++col;
+							cells.add(cell);
 						}
 					} else {
 						LOG.debug("Unhandled row object " + rowObj.getClass());
 					}
 				}
 
-				// Identify if any content was kept across the page folder
-				if (cacheColumns.size() > 0) {
-					column.addTableRow(new TableRow(cacheColumns));
-
-					if (!column.isCachedOverPageFold()) {
-						createPageFromLayout();
-						render(column, true);
-					}
-				} else {
-					// Set the next content that's output to start after the last row
-					yOffset = maxYOffset;
-				}
+				column.addTableRow(new TableRow(cells));
+				render(column, false);
 			}
 		}
 	}
@@ -690,18 +666,10 @@ public class DocxRenderer implements Renderer {
 		// text color
 		if (runProperties.getColor() != null) {
 			String strColor = runProperties.getColor().getVal();
-			Color newColor;
+			Color newColor = getColor(strColor);
 
-			if (strColor.equals("auto")) {
+			if (newColor == null) {
 				newColor = Color.BLACK;
-			} else {
-				String hex = StringUtils.leftPad(strColor, 6, '0');
-
-				newColor = new Color(
-					Integer.valueOf(hex.substring(0, 2), 16),
-					Integer.valueOf(hex.substring(2, 4), 16),
-					Integer.valueOf(hex.substring(4, 6), 16)
-				);
 			}
 
 			if (!newColor.equals(baseStyle.getColor())) {
@@ -710,6 +678,20 @@ public class DocxRenderer implements Renderer {
 		}
 
 		return newStyle;
+	}
+
+	private Color getColor(String strColor) {
+		if (strColor.equals("auto")) {
+			return null;
+		} else {
+			String hex = StringUtils.leftPad(strColor, 6, '0');
+
+			return new Color(
+				Integer.valueOf(hex.substring(0, 2), 16),
+				Integer.valueOf(hex.substring(2, 4), 16),
+				Integer.valueOf(hex.substring(4, 6), 16)
+			);
+		}
 	}
 
 	private Image getImage(String relationshipId) throws IOException {
@@ -726,25 +708,51 @@ public class DocxRenderer implements Renderer {
 		return (bi == null) ? 0 : bi.intValue();
 	}
 
-	public void render(Column column, boolean forceOntoCurrentPage) {
-		for (Row row : column.getRows()) {
-			// Check if this line will fit onto the current page, otherwise create a new page
-			if (!forceOntoCurrentPage && yOffset + row.getContentHeight() > layout.getHeight() - layout.getBottomMargin()) {
-				if (column.isCachedOverPageFold()) {
-					return;
-				} else {
-					createPageFromLayout();
-				}
-			}
+	private void render(Column column, boolean forceOntoCurrentPage) {
+		render(column, forceOntoCurrentPage, false, column.getContentHeight());
+	}
 
+	private void render(Column column, boolean forceOntoCurrentPage, boolean delayPageCreation, int contentHeight) {
+		if (column.isBuffered()) {
+			return;
+		}
+
+		//int finalYOffset = yOffset + contentHeight;
+		
+		if (column.getFill() != null) {
+			Color origColor = g.getColor();
+
+			g.setColor(column.getFill());
+			g.fillRect(column.getXOffset(), yOffset, column.getWidth(), contentHeight);
+			g.setColor(origColor);
+		}
+
+		for (Row row : column.getRows()) {
 			if (row instanceof Line) {
+				// Check if this line will fit onto the current page, otherwise create a new page
+				if (!forceOntoCurrentPage && yOffset + row.getContentHeight() > layout.getHeight() - layout.getBottomMargin()) {
+					if (column.isBuffered() || delayPageCreation) {
+						return;
+					} else {
+						createPageFromLayout();
+					}
+				}
+
 				render((Line) row, column.getXOffset());
 			} else if (row instanceof BlankRow) {
 				yOffset += row.getContentHeight();
 			} else if (row instanceof TableRow) {
-				TableRow tableRow = (TableRow) row;
+				++tableRowNesting;
+				renderTableRow((TableRow) row, forceOntoCurrentPage);
+				--tableRowNesting;
 
-				renderColumns(tableRow.getColumns(), true);
+				// If this is the top-level table row and there's still content, create a new page and output it
+				if (tableRowNesting > 0) {
+					return;
+				} else if (row.getContentHeight() > 0) {
+					createPageFromLayout();
+					renderTableRow((TableRow) row, forceOntoCurrentPage);
+				}
 			} else {
 				LOG.debug("Unhandled row object " + row.getClass());
 			}
@@ -753,7 +761,7 @@ public class DocxRenderer implements Renderer {
 		}
 	}
 
-	public void render(Line line, int initialXOffset) {
+	private void render(Line line, int initialXOffset) {
 		yOffset += line.getContentHeight();
 		int xOffset = initialXOffset;
 
@@ -786,10 +794,6 @@ public class DocxRenderer implements Renderer {
 						di.getWidth(),
 						di.getHeight()
 					);
-				} else if (obj instanceof TableRow) {
-					TableRow row = (TableRow) obj;
-
-					renderColumns(row.getColumns(), true);
 				} else {
 					yOffset += content.getHeight();
 				}
@@ -807,14 +811,15 @@ public class DocxRenderer implements Renderer {
 		}
 	}
 
-	private void renderColumns(List<Column> cacheColumns, boolean forceOntoCurrentPage) {
+	private void renderTableRow(TableRow row, boolean forceOntoCurrentPage) {
 		int start = yOffset; // start every column from the same position
 		int maxYOffset = start;
+		int contentHeight = row.getContentHeight();
 
-		for (Column cacheColumn : cacheColumns) {
-			cacheColumn.setCacheOverPageFold(false);
+		// Render as much content from each column onto the current page as possible
+		for (Column cell : row.getColumns()) {
 			yOffset = start;
-			render(cacheColumn, forceOntoCurrentPage);
+			render(cell, forceOntoCurrentPage, true, contentHeight);
 			maxYOffset = Math.max(maxYOffset, yOffset);
 		}
 
