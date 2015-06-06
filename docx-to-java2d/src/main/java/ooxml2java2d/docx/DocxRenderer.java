@@ -222,7 +222,15 @@ public class DocxRenderer implements Renderer {
 			relPart = header.getRelationshipsPart(false);
 
 			iterateContentParts(header, new Column(layout.getLeftMargin(), layout.getWidth()));
+
+			if (yOffset < layout.getTopMargin()) {
+				yOffset = layout.getTopMargin();
+			}
+		} else {
+			yOffset = layout.getTopMargin();
 		}
+
+		int headerEndYOffset = yOffset;
 
 		// footer
 		if (footer == null) {
@@ -252,7 +260,7 @@ public class DocxRenderer implements Renderer {
 
 		++page;
 		relPart = main.getRelationshipsPart();
-		yOffset = layout.getTopMargin();
+		yOffset = headerEndYOffset;
 	}
 
 	private void iterateContentParts(ContentAccessor ca, Column column) {

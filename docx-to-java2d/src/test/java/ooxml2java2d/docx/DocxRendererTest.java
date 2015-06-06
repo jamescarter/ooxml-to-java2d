@@ -33,6 +33,7 @@ import org.junit.Test;
 public class DocxRendererTest {
 	private static final File TEST_FILE_LAYOUTS = new File("src/test/resources/docx/layouts.docx");
 	private static final File TEST_FILE_BODY_START_NO_HEADER = new File("src/test/resources/docx/body_start_no_header.docx");
+	private static final File TEST_FILE_BODY_START_WITH_HEADER = new File("src/test/resources/docx/body_start_with_header.docx");
 	private static final File TEST_HEADER = new File("src/test/resources/docx/header.docx");
 	private static final File TEST_HEADER_FIRST_EVEN_ODD = new File("src/test/resources/docx/header_first_even_odd.docx");
 	private static final File TEST_FOOTER_FIRST_EVEN_ODD = new File("src/test/resources/docx/footer_first_even_odd.docx");
@@ -101,8 +102,20 @@ public class DocxRendererTest {
 		DrawStringAction page1Action = pages.get(0).getActions(DrawStringAction.class).get(0);
 		DrawStringAction page2Action = pages.get(1).getActions(DrawStringAction.class).get(0);
 
-		assertEquals("DrawStringAction[text=Hello, World!,x=1440,y=1708]", page1Action.toString());
-		assertEquals("DrawStringAction[text=Hello, World!,x=1134,y=1969]", page2Action.toString());
+		assertEquals("DrawStringAction[text=Hello, World!,x=1440,y=1402]", page1Action.toString()); // 2cm top margin
+		assertEquals("DrawStringAction[text=Hello, World!,x=1134,y=2536]", page2Action.toString()); // 4cm top margin
+	}
+
+	@Test
+	public void testBodyStartWithHeader() throws IOException {
+		new DocxRenderer(TEST_FILE_BODY_START_WITH_HEADER).render(builder);
+
+		List<DrawStringAction> actions = builder.getPages().get(0).getActions(DrawStringAction.class);
+
+		DrawStringAction ds7 = actions.get(6);
+		DrawStringAction ds8 = actions.get(7);
+
+		assertTrue(ds8.getY() >  ds7.getY());
 	}
 
 	@Test
