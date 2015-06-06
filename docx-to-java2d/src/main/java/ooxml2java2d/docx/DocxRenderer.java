@@ -16,6 +16,7 @@
 
 package ooxml2java2d.docx;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -38,6 +39,8 @@ import ooxml2java2d.docx.internal.FontStyle;
 import ooxml2java2d.docx.internal.PageLayout;
 import ooxml2java2d.docx.internal.ParagraphStyle;
 import ooxml2java2d.docx.internal.content.BlankRow;
+import ooxml2java2d.docx.internal.content.Border;
+import ooxml2java2d.docx.internal.content.BorderStyle;
 import ooxml2java2d.docx.internal.content.Column;
 import ooxml2java2d.docx.internal.content.Content;
 import ooxml2java2d.docx.internal.content.ImageContent;
@@ -63,6 +66,7 @@ import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
 import org.docx4j.openpackaging.parts.relationships.Namespaces;
 import org.docx4j.openpackaging.parts.relationships.RelationshipsPart;
 import org.docx4j.wml.Br;
+import org.docx4j.wml.CTBorder;
 import org.docx4j.wml.ContentAccessor;
 import org.docx4j.wml.Drawing;
 import org.docx4j.wml.Lvl;
@@ -82,6 +86,7 @@ import org.docx4j.wml.Style;
 import org.docx4j.wml.Tbl;
 import org.docx4j.wml.TblGridCol;
 import org.docx4j.wml.Tc;
+import org.docx4j.wml.TcPrInner.TcBorders;
 import org.docx4j.wml.Text;
 import org.docx4j.wml.Tr;
 import org.docx4j.wml.UnderlineEnumeration;
@@ -457,11 +462,15 @@ public class DocxRenderer implements Renderer {
 				for (Object rowObj : tableRow.getContent()) {
 					if (rowObj instanceof JAXBElement) {
 						JAXBElement<?> element = (JAXBElement<?>) rowObj;
-						Color fill = null;
 
 						if (element.getDeclaredType().equals(Tc.class)) {
 							Tc tableCell = (Tc) element.getValue();
 							int width = columnWidths.get(col);
+							Color fill = null;
+							Border top = null;
+							Border right = null;
+							Border bottom = null;
+							Border left = null;
 
 							// Horizontal cell merge
 							if (tableCell.getTcPr().getGridSpan() != null) {
@@ -473,10 +482,19 @@ public class DocxRenderer implements Renderer {
 							}
 
 							if (tableCell.getTcPr().getShd() != null) {
-								fill = getColor(tableCell.getTcPr().getShd().getFill());
+								fill = getColor(tableCell.getTcPr().getShd().getFill(), null);
 							}
 
-							Column cell = new Column(xOffset, width, fill);
+							if (tableCell.getTcPr().getTcBorders() != null) {
+								TcBorders borders = tableCell.getTcPr().getTcBorders();
+
+								top = getBorder(borders.getTop());
+								right = getBorder(borders.getRight());
+								bottom = getBorder(borders.getBottom());
+								left = getBorder(borders.getLeft());
+							}
+
+							Column cell = new Column(xOffset, width, fill, top, right, bottom, left);
 
 							cell.setBuffered(true);
 
@@ -666,11 +684,7 @@ public class DocxRenderer implements Renderer {
 		// text color
 		if (runProperties.getColor() != null) {
 			String strColor = runProperties.getColor().getVal();
-			Color newColor = getColor(strColor);
-
-			if (newColor == null) {
-				newColor = Color.BLACK;
-			}
+			Color newColor = getColor(strColor, Color.BLACK);
 
 			if (!newColor.equals(baseStyle.getColor())) {
 				newStyle.setColor(newColor);
@@ -680,9 +694,9 @@ public class DocxRenderer implements Renderer {
 		return newStyle;
 	}
 
-	private Color getColor(String strColor) {
-		if (strColor.equals("auto")) {
-			return null;
+	private Color getColor(String strColor, Color defaultColor) {
+		if (strColor == null || strColor.equals("auto")) {
+			return defaultColor;
 		} else {
 			String hex = StringUtils.leftPad(strColor, 6, '0');
 
@@ -694,6 +708,21 @@ public class DocxRenderer implements Renderer {
 		}
 	}
 
+	private Border getBorder(CTBorder ctBorder) {
+		Border border = null;
+
+		if (ctBorder != null) {
+			// TODO: support other border styles
+			int size = getValue(ctBorder.getSz());
+
+			if (size > 0) {
+				border = new Border(getColor(ctBorder.getColor(), Color.BLACK), size / 8 * 20, BorderStyle.SINGLE);
+			}
+		}
+
+		return border;
+	}
+	
 	private Image getImage(String relationshipId) throws IOException {
 		BinaryPart binary = (BinaryPart) relPart.getPart(relationshipId);
 
@@ -717,15 +746,42 @@ public class DocxRenderer implements Renderer {
 			return;
 		}
 
-		//int finalYOffset = yOffset + contentHeight;
-		
-		if (column.getFill() != null) {
-			Color origColor = g.getColor();
+		Color origColor = g.getColor();
 
+		if (column.getFill() != null) {
 			g.setColor(column.getFill());
 			g.fillRect(column.getXOffset(), yOffset, column.getWidth(), contentHeight);
-			g.setColor(origColor);
 		}
+
+		if (column.getTopBorder() != null) {
+			Border top = column.getTopBorder();
+			g.setColor(top.getColor());
+			g.setStroke(new BasicStroke((float) top.getSize()));
+			g.drawLine(column.getXOffset(), yOffset, column.getXOffset() + column.getWidth(), yOffset);
+		}
+
+		if (column.getRightBorder() != null) {
+			Border right = column.getRightBorder();
+			g.setColor(right.getColor());
+			g.setStroke(new BasicStroke((float) right.getSize()));
+			g.drawLine(column.getXOffset() + column.getWidth(), yOffset, column.getXOffset() + column.getWidth(), yOffset + contentHeight);
+		}
+
+		if (column.getBottomBorder() != null) {
+			Border bottom = column.getBottomBorder();
+			g.setColor(bottom.getColor());
+			g.setStroke(new BasicStroke((float) bottom.getSize()));
+			g.drawLine(column.getXOffset(), yOffset + contentHeight, column.getXOffset() + column.getWidth(), yOffset + contentHeight);
+		}
+
+		if (column.getLeftBorder() != null) {
+			Border left = column.getLeftBorder();
+			g.setColor(left.getColor());
+			g.setStroke(new BasicStroke((float) left.getSize()));
+			g.drawLine(column.getXOffset(), yOffset, column.getXOffset(), yOffset + contentHeight);
+		}
+
+		g.setColor(origColor);
 
 		for (Row row : column.getRows()) {
 			if (row instanceof Line) {

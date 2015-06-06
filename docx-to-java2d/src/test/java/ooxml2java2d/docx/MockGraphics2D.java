@@ -245,7 +245,7 @@ public class MockGraphics2D extends Graphics2D {
 
 	@Override
 	public void setStroke(Stroke s) {
-
+		actions.add(s);
 	}
 
 	@Override
@@ -337,7 +337,7 @@ public class MockGraphics2D extends Graphics2D {
 
 	@Override
 	public void drawLine(int x1, int y1, int x2, int y2) {
-
+		actions.add(new DrawLine(x1, y1, x2, y2));
 	}
 
 	@Override

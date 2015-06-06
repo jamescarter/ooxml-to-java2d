@@ -49,6 +49,7 @@ public class DocxRendererTest {
 	private static final File TEST_ALIGNMENT = new File("src/test/resources/docx/alignment.docx");
 	private static final File TEST_TABLE_SIMPLE = new File("src/test/resources/docx/table_simple.docx");
 	private static final File TEST_TABLE_MERGE_HORIZONTAL = new File("src/test/resources/docx/table_merge_horizontal.docx");
+	private static final File TEST_TABLE_BORDERS = new File("src/test/resources/docx/table_borders.docx");
 	private static final File TEST_IMAGE_INLINE = new File("src/test/resources/docx/image_inline.docx");
 	private static final File TEST_IMAGE_ANCHOR = new File("src/test/resources/docx/image_anchor.docx");
 	private static final File TEST_IMAGE_ANCHOR_PAGE_WRAP_BG = new File("src/test/resources/docx/image_anchor_page_wrap_background.docx");
@@ -503,6 +504,15 @@ public class DocxRendererTest {
 		assertEquals("E2", e2.getText());
 		assertEquals(e1.getX(), e2.getX());
 		assertTrue(e2.getX() > c2d2.getX());
+	}
+
+	@Test
+	public void testTableBorders() throws IOException {
+		new DocxRenderer(TEST_TABLE_BORDERS).render(builder);
+
+		List<DrawLine> actions = builder.getPages().get(0).getActions(DrawLine.class);
+
+		assertEquals(12, actions.size());
 	}
 
 	@Test

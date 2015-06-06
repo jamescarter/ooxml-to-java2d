@@ -30,18 +30,26 @@ public class Column {
 	private int xOffset;
 	private int width;
 	private Color fill;
+	private Border top;
+	private Border right;
+	private Border bottom;
+	private Border left;
 	private boolean isBuffered;
 	private List<Row> rows = new ArrayList<>();
 	private Line line;
 
 	public Column(int xOffset, int width) {
-		this(xOffset, width, null);
+		this(xOffset, width, null, null, null, null, null);
 	}
 
-	public Column(int xOffset, int width, Color fill) {
+	public Column(int xOffset, int width, Color fill, Border top, Border right, Border bottom, Border left) {
 		this.xOffset = xOffset;
 		this.width = width;
 		this.fill = fill;
+		this.top = top;
+		this.right = right;
+		this.bottom = bottom;
+		this.left = left;
 	}
 
 	public int getXOffset() {
@@ -54,6 +62,22 @@ public class Column {
 
 	public Color getFill() {
 		return fill;
+	}
+
+	public Border getTopBorder() {
+		return top;
+	}
+
+	public Border getRightBorder() {
+		return right;
+	}
+
+	public Border getBottomBorder() {
+		return bottom;
+	}
+
+	public Border getLeftBorder() {
+		return left;
 	}
 
 	public int getContentHeight() {
@@ -143,6 +167,10 @@ public class Column {
 			.append("xOffset", xOffset)
 			.append("width", width)
 			.append("fill", fill)
+			.append("top", top)
+			.append("right", right)
+			.append("bottom", bottom)
+			.append("left", left)
 			.append("isBuffered", isBuffered)
 			.append("rows", rows)
 			.toString();

@@ -14,47 +14,41 @@
  * limitations under the License.
  */
 
-package ooxml2java2d.docx;
+package ooxml2java2d.docx.internal.content;
 
+import java.awt.Color;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
-public class FillRect {
-	private int x;
-	private int y;
-	private int width;
-	private int height;
+public class Border {
+	private Color color;
+	private int size;
+	private BorderStyle style;
 
-	public FillRect(int x, int y, int width, int height) {
-		this.x = x;
-		this.y = y;
-		this.width = width;
-		this.height = height;
+	public Border(Color color, int size, BorderStyle style) {
+		this.color = color;
+		this.size = size;
+		this.style = style;
 	}
 
-	public int getX() {
-		return x;
+	public Color getColor() {
+		return color;
 	}
 
-	public int getY() {
-		return y;
+	public int getSize() {
+		return size;
 	}
 
-	public int getWidth() {
-		return width;
-	}
-
-	public int getHeight() {
-		return height;
+	public BorderStyle getStyle() {
+		return style;
 	}
 
 	@Override
 	public String toString() {
 		return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
-			.append("x", x)
-			.append("y", y)
-			.append("width", width)
-			.append("height", height)
+			.append("color", color)
+			.append("size", size)
+			.append("style", style)
 			.toString();
 	}
 }
