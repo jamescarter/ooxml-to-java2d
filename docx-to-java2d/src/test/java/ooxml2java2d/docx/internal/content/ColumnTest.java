@@ -19,6 +19,7 @@ package ooxml2java2d.docx.internal.content;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -45,6 +46,27 @@ public class ColumnTest {
 	public void testAddContent() {
 		column.addContent(new StringContent(10, 10, "Text"), 0);
 		column.addContent(new StringContent(90, 10, "Text"), 0);
+	}
+
+	@Test
+	public void testAddContentExceptionHandling() {
+		assertEquals(0, column.getRows().length);
+
+		column.addContent(new StringContent(80, 10, "Text"), 0);
+		assertEquals(1, column.getRows().length);
+
+		// too big for current line, so should be added onto a new line
+		column.addContent(new StringContent(80, 10, "Text"), 0);
+		assertEquals(2, column.getRows().length);
+
+		// too big to fit on current or a new line, so should throw an exception
+		try {
+			column.addContent(new StringContent(120, 10, "Text"), 0);
+			fail();
+		} catch (ContentTooBigException ctbe) {
+			// Verify that a new line was not created
+			assertEquals(2, column.getRows().length);
+		}
 	}
 
 	@Test

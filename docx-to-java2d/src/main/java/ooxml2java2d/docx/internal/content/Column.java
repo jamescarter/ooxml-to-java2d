@@ -126,8 +126,13 @@ public class Column {
 	public void addContent(Content content, int verticalSpace) {
 		Line currentLine = getCurrentLine();
 
-		if (!currentLine.canFitContent(content.getWidth())) {
+		if (content.getWidth() > width) {
+			// content too big for any line
+			throw new ContentTooBigException("Content too big for line");
+		} else if (!currentLine.canFitContent(content.getWidth())) {
+			// content too big for the current line, but small enough for a new line
 			addVerticalSpace(verticalSpace);
+			currentLine = getCurrentLine();
 		}
 
 		currentLine.addContent(content);
