@@ -16,19 +16,35 @@
 
 package ooxml2java2d.docx.internal.content;
 
+import java.awt.Image;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+
+import javax.imageio.ImageIO;
+
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
+import org.docx4j.openpackaging.parts.WordprocessingML.BinaryPart;
+import org.docx4j.openpackaging.parts.relationships.RelationshipsPart;
 
 public class ImageContent extends Content {
+	private RelationshipsPart relationshipPart;
 	private String relationshipId;
 
-	public ImageContent(int width, int height, String relationshipId) {
+	public ImageContent(int width, int height, RelationshipsPart relationshipPart, String relationshipId) {
 		super(width, height);
+		this.relationshipPart = relationshipPart;
 		this.relationshipId = relationshipId;
 	}
 
 	public String getRelationshipId() {
 		return relationshipId;
+	}
+
+	public Image getImage() throws IOException {
+		BinaryPart binary = (BinaryPart) relationshipPart.getPart(relationshipId);
+
+		return ImageIO.read(new ByteArrayInputStream(binary.getBytes()));
 	}
 
 	@Override

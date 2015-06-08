@@ -448,10 +448,13 @@ public class DocxRendererTest {
 		DrawStringAction right = actions.get(1);
 		assertEquals("Right aligned text", right.getText());
 		assertEquals(1684, right.getY());
+		assertTrue(right.getX() > left.getX());
 
 		DrawStringAction center = actions.get(2);
 		assertEquals("Center aligned text", center.getText());
 		assertEquals(1959, center.getY());
+		assertTrue(center.getX() > left.getX());
+		assertTrue(center.getX() < right.getX());
 	}
 
 	@Test

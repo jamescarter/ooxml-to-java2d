@@ -16,8 +16,6 @@
 
 package ooxml2java2d.docx.internal;
 
-public enum Alignment {
-	LEFT,
-	RIGHT,
-	CENTER
+public interface PageInitiationAdapter {
+	void initiatePage();
 }

@@ -16,13 +16,8 @@
 
 package ooxml2java2d.docx;
 
-import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.Image;
-import java.awt.RenderingHints;
 import java.awt.geom.Rectangle2D;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -33,19 +28,18 @@ import java.util.List;
 
 import ooxml2java2d.GraphicsBuilder;
 import ooxml2java2d.Renderer;
-import ooxml2java2d.docx.internal.Alignment;
-import ooxml2java2d.docx.internal.FontConfig;
+import ooxml2java2d.docx.internal.HAlignment;
 import ooxml2java2d.docx.internal.FontStyle;
+import ooxml2java2d.docx.internal.GraphicsRenderer;
+import ooxml2java2d.docx.internal.PageInitiationAdapter;
 import ooxml2java2d.docx.internal.PageLayout;
 import ooxml2java2d.docx.internal.ParagraphStyle;
-import ooxml2java2d.docx.internal.content.BlankRow;
 import ooxml2java2d.docx.internal.content.Border;
 import ooxml2java2d.docx.internal.content.BorderStyle;
 import ooxml2java2d.docx.internal.content.Column;
 import ooxml2java2d.docx.internal.content.Content;
 import ooxml2java2d.docx.internal.content.ImageContent;
 import ooxml2java2d.docx.internal.content.Line;
-import ooxml2java2d.docx.internal.content.Row;
 import ooxml2java2d.docx.internal.content.StringContent;
 import ooxml2java2d.docx.internal.content.TableRow;
 
@@ -59,7 +53,6 @@ import org.docx4j.model.listnumbering.ListLevel;
 import org.docx4j.model.structure.SectionWrapper;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
-import org.docx4j.openpackaging.parts.WordprocessingML.BinaryPart;
 import org.docx4j.openpackaging.parts.WordprocessingML.FooterPart;
 import org.docx4j.openpackaging.parts.WordprocessingML.HeaderPart;
 import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
@@ -93,7 +86,6 @@ import org.docx4j.wml.UnderlineEnumeration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.imageio.ImageIO;
 import javax.xml.bind.JAXBElement;
 import javax.xml.namespace.QName;
 
@@ -106,26 +98,32 @@ public class DocxRenderer implements Renderer {
 	private static final int TAB_WIDTH = 712;
 	private static final int EMU_DIVISOR = 635; // divide emu by this to convert to dxa
 	private static final String BULLET = new Character((char) 0x2022).toString();
-	private GraphicsBuilder builder;
-	private Graphics2D g;
 	private WordprocessingMLPackage word;
 	private MainDocumentPart main;
-	private Deque<PageLayout> layouts = new ArrayDeque<>();
+	private PageInitiationAdapter initiation;
+	private GraphicsRenderer renderer;
+	private Deque<PageLayout> layouts;
 	private PageLayout layout;
 	private int page = 1;
-	private int yOffset;
 	private ParagraphStyle defaultParaStyle;
 	private ParagraphStyle paraStyle;
 	private ParagraphStyle runStyle;
-	private RelationshipsPart relPart;
-	private int tableRowNesting = 0;
+	private RelationshipsPart relationshipPart;
 
 	public DocxRenderer(File docx) throws IOException {
 		try {
-			word = WordprocessingMLPackage.load(docx);
+			this.word = WordprocessingMLPackage.load(docx);
+			this.main = word.getMainDocumentPart();
 		} catch (Docx4JException e) {
 			throw new IOException("Error loading document", e);
 		}
+
+		this.initiation = new PageInitiationAdapter() {
+			@Override
+			public void initiatePage() {
+				initPage();
+			}
+		};
 	}
 
 	/**
@@ -133,11 +131,10 @@ public class DocxRenderer implements Renderer {
 	 */
 	@Override
 	public void render(GraphicsBuilder builder) {
-		this.builder = builder;
-		this.main = word.getMainDocumentPart();
+		this.renderer = new GraphicsRenderer(builder, initiation);
+		this.layouts = getPageLayouts(word);
 
 		setDefaultStyles();
-		setPageLayouts(word);
 		createPageFromNextLayout();
 		iterateContentParts(main, new Column(layout.getLeftMargin(), layout.getWidth() - layout.getLeftMargin() - layout.getRightMargin()));
 	}
@@ -153,10 +150,14 @@ public class DocxRenderer implements Renderer {
 		}
 	}
 
-	private void setPageLayouts(WordprocessingMLPackage word) {
+	private Deque<PageLayout> getPageLayouts(WordprocessingMLPackage word) {
+		Deque<PageLayout> layouts = new ArrayDeque<>();
+
 		for (SectionWrapper sw : word.getDocumentModel().getSections()) {
 			layouts.add(createPageLayout(sw));
 		}
+
+		return layouts;
 	}
 
 	private PageLayout createPageLayout(SectionWrapper sw) {
@@ -179,27 +180,10 @@ public class DocxRenderer implements Renderer {
 
 	private void createPageFromNextLayout() {
 		layout = layouts.removeFirst();
-		createPageFromLayout();
+		renderer.nextPage(layout.getWidth(), layout.getHeight());
 	}
 
-	private void createPageFromLayout() {
-		Graphics2D g2 = builder.nextPage(layout.getWidth(), layout.getHeight());
-
-		g2.setBackground(Color.WHITE);
-		g2.clearRect(0, 0, layout.getWidth(), layout.getHeight());
-		g2.setColor(Color.BLACK);	
-		g2.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
-		g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
-		g2.setRenderingHint(RenderingHints.KEY_TEXT_LCD_CONTRAST, 250);
-
-		// Use the settings from the previous 'page'
-		if (g != null) {
-			g2.setFont(g.getFont());
-			g2.setColor(g.getColor());
-		}
-
-		g = g2;
-
+	private void initPage() {
 		HeaderPart header = null;
 		FooterPart footer = null;
 
@@ -218,19 +202,19 @@ public class DocxRenderer implements Renderer {
 		}
 
 		if (header != null) {
-			yOffset = layout.getHeaderMargin();
-			relPart = header.getRelationshipsPart(false);
+			relationshipPart = header.getRelationshipsPart(false);
+			renderer.setYOffset(layout.getHeaderMargin());
 
 			iterateContentParts(header, new Column(layout.getLeftMargin(), layout.getWidth()));
 
-			if (yOffset < layout.getTopMargin()) {
-				yOffset = layout.getTopMargin();
+			if (renderer.getYOffset() < layout.getTopMargin()) {
+				renderer.setYOffset(layout.getTopMargin());
 			}
 		} else {
-			yOffset = layout.getTopMargin();
+			renderer.setYOffset(layout.getTopMargin());
 		}
 
-		int headerEndYOffset = yOffset;
+		int headerEndYOffset = renderer.getYOffset();
 
 		// footer
 		if (footer == null) {
@@ -241,8 +225,10 @@ public class DocxRenderer implements Renderer {
 			footer = layout.getHeaderFooterPolicy().getDefaultFooter();
 		}
 
+		int footerStart;
+
 		if (footer != null) {
-			relPart = footer.getRelationshipsPart(false);
+			relationshipPart = footer.getRelationshipsPart(false);
 
 			Column footerCol = new Column(layout.getLeftMargin(), layout.getWidth());
 
@@ -251,16 +237,18 @@ public class DocxRenderer implements Renderer {
 			iterateContentParts(footer, footerCol);
 
 			footerCol.setBuffered(false);
+			footerStart = layout.getHeight() - layout.getFooterMargin() - footerCol.getContentHeight();
 
-			yOffset = layout.getHeight() - layout.getFooterMargin() - footerCol.getContentHeight();
-
-			// force footer content onto current page, otherwise it may be pushed onto a new page
-			render(footerCol, true);
+			renderer.setYOffset(footerStart);
+			renderer.renderColumn(footerCol);
+		} else {
+			footerStart = layout.getHeight() - layout.getBottomMargin();
 		}
 
 		++page;
-		relPart = main.getRelationshipsPart();
-		yOffset = headerEndYOffset;
+		relationshipPart = main.getRelationshipsPart();
+		renderer.setYOffset(headerEndYOffset);
+		renderer.setEndPosition(footerStart);
 	}
 
 	private void iterateContentParts(ContentAccessor ca, Column column) {
@@ -301,6 +289,7 @@ public class DocxRenderer implements Renderer {
 
 		paraStyle = getParagraphStyle(defaultParaStyle, properties);
 
+		column.addAction(paraStyle.getHAlignment());
 		column.addVerticalSpace(paraStyle.getSpaceBefore());
 
 		if (properties != null && properties.getNumPr() != null) {
@@ -334,7 +323,7 @@ public class DocxRenderer implements Renderer {
 
 		column.addVerticalSpace(paraStyle.getSpaceAfter());
 
-		render(column, false);
+		renderer.renderColumn(column);
 
 		if (properties != null && properties.getSectPr() != null) {
 			// The presence of SectPr indicates the next part should be started on a new page with a different layout
@@ -358,6 +347,8 @@ public class DocxRenderer implements Renderer {
 
 		runStyle = newRunStyle;
 
+		column.addAction(paraStyle.getHAlignment());
+
 		if (run.getRPr() != null && run.getContent().size() == 0) {
 			column.addVerticalSpace((int) paraStyle.getStringBoxSize("").getHeight());
 		} else {
@@ -368,12 +359,12 @@ public class DocxRenderer implements Renderer {
 	private void processBreak(Br br, Column column) {
 		if (br.getType() == null) {
 			// paragraph break
-			render(column, false);
+			renderer.renderColumn(column);
 		} else {
 			switch (br.getType()) {
 				case PAGE:
-					render(column, false);
-					createPageFromLayout();
+					renderer.renderColumn(column);
+					renderer.nextPage(layout.getWidth(), layout.getHeight());
 				break;
 				default:
 					LOG.debug("Unhandled break type " + br.getType());
@@ -436,7 +427,7 @@ public class DocxRenderer implements Renderer {
 				column.addContent(new StringContent((int) bounds.getWidth(), (int) bounds.getHeight(), newText), 0);
 				column.addVerticalSpace(0);
 
-				render(column, false);
+				renderer.renderColumn(column);
 				processText(nextText, column);
 			}
 		}
@@ -520,7 +511,7 @@ public class DocxRenderer implements Renderer {
 				}
 
 				column.addTableRow(new TableRow(cells));
-				render(column, false);
+				renderer.renderColumn(column);
 			}
 		}
 	}
@@ -541,12 +532,10 @@ public class DocxRenderer implements Renderer {
 					int x = getValue(anchor.getPositionH().getPosOffset()) / EMU_DIVISOR;
 					int y = getValue(anchor.getPositionV().getPosOffset()) / EMU_DIVISOR;
 
-					renderImage(
-						anchor.getGraphic().getGraphicData().getPic().getBlipFill().getBlip().getEmbed(),
+					renderer.renderImage(
+						new ImageContent(width, height, relationshipPart, anchor.getGraphic().getGraphicData().getPic().getBlipFill().getBlip().getEmbed()),
 						x,
-						y,
-						width,
-						height
+						y
 					);
 				} else {
 					processGraphic(anchor.getExtent(), anchor.getGraphic().getGraphicData(), column);
@@ -567,7 +556,7 @@ public class DocxRenderer implements Renderer {
 
 			// TODO: Add support for external reference
 			if (!rId.isEmpty()) {
-				column.addContentForced(new ImageContent(width, height, rId));
+				column.addContentForced(new ImageContent(width, height, relationshipPart, rId));
 			}
 		}
 	}
@@ -625,10 +614,10 @@ public class DocxRenderer implements Renderer {
 			if (properties.getJc() != null) {
 				switch (properties.getJc().getVal()) {
 					case RIGHT:
-						newStyle.setAlignment(Alignment.RIGHT);
+						newStyle.setHAlignment(HAlignment.RIGHT);
 					break;
 					case CENTER:
-						newStyle.setAlignment(Alignment.CENTER);
+						newStyle.setHAlignment(HAlignment.CENTER);
 					break;
 					default:
 						// default to LEFT aligned
@@ -730,12 +719,6 @@ public class DocxRenderer implements Renderer {
 
 		return border;
 	}
-	
-	private Image getImage(String relationshipId) throws IOException {
-		BinaryPart binary = (BinaryPart) relPart.getPart(relationshipId);
-
-		return ImageIO.read(new ByteArrayInputStream(binary.getBytes()));
-	}
 
 	private int getValue(Integer i) {
 		return (i == null) ? 0 : i;
@@ -743,171 +726,5 @@ public class DocxRenderer implements Renderer {
 
 	private int getValue(BigInteger bi) {
 		return (bi == null) ? 0 : bi.intValue();
-	}
-
-	private void render(Column column, boolean forceOntoCurrentPage) {
-		render(column, forceOntoCurrentPage, false, column.getContentHeight());
-	}
-
-	private void render(Column column, boolean forceOntoCurrentPage, boolean delayPageCreation, int contentHeight) {
-		if (column.isBuffered()) {
-			return;
-		}
-
-		Color origColor = g.getColor();
-
-		if (column.getFill() != null) {
-			g.setColor(column.getFill());
-			g.fillRect(column.getXOffset(), yOffset, column.getWidth(), contentHeight);
-		}
-
-		if (column.getTopBorder() != null) {
-			Border top = column.getTopBorder();
-			g.setColor(top.getColor());
-			g.setStroke(new BasicStroke((float) top.getSize()));
-			g.drawLine(column.getXOffset(), yOffset, column.getXOffset() + column.getWidth(), yOffset);
-		}
-
-		if (column.getRightBorder() != null) {
-			Border right = column.getRightBorder();
-			g.setColor(right.getColor());
-			g.setStroke(new BasicStroke((float) right.getSize()));
-			g.drawLine(column.getXOffset() + column.getWidth(), yOffset, column.getXOffset() + column.getWidth(), yOffset + contentHeight);
-		}
-
-		if (column.getBottomBorder() != null) {
-			Border bottom = column.getBottomBorder();
-			g.setColor(bottom.getColor());
-			g.setStroke(new BasicStroke((float) bottom.getSize()));
-			g.drawLine(column.getXOffset(), yOffset + contentHeight, column.getXOffset() + column.getWidth(), yOffset + contentHeight);
-		}
-
-		if (column.getLeftBorder() != null) {
-			Border left = column.getLeftBorder();
-			g.setColor(left.getColor());
-			g.setStroke(new BasicStroke((float) left.getSize()));
-			g.drawLine(column.getXOffset(), yOffset, column.getXOffset(), yOffset + contentHeight);
-		}
-
-		g.setColor(origColor);
-
-		for (Row row : column.getRows()) {
-			if (row instanceof Line) {
-				// Check if this line will fit onto the current page, otherwise create a new page
-				if (!forceOntoCurrentPage && yOffset + row.getContentHeight() > layout.getHeight() - layout.getBottomMargin()) {
-					if (column.isBuffered() || delayPageCreation) {
-						return;
-					} else {
-						createPageFromLayout();
-					}
-				}
-
-				render((Line) row, column.getXOffset());
-			} else if (row instanceof BlankRow) {
-				yOffset += row.getContentHeight();
-			} else if (row instanceof TableRow) {
-				++tableRowNesting;
-				renderTableRow((TableRow) row, forceOntoCurrentPage);
-				--tableRowNesting;
-
-				// If this is the top-level table row and there's still content, create a new page and output it
-				if (tableRowNesting > 0) {
-					return;
-				} else if (row.getContentHeight() > 0) {
-					createPageFromLayout();
-					renderTableRow((TableRow) row, forceOntoCurrentPage);
-				}
-			} else {
-				LOG.debug("Unhandled row object " + row.getClass());
-			}
-
-			column.removeRow(row);
-		}
-	}
-
-	private void render(Line line, int initialXOffset) {
-		yOffset += line.getContentHeight();
-		int xOffset = initialXOffset;
-
-		switch (paraStyle.getAlignment()) {
-			case RIGHT:
-				xOffset += line.getWidth() - line.getContentWidth();
-			break;
-			case CENTER:
-				xOffset += (line.getWidth() - line.getContentWidth()) / 2;
-			break;
-			default:
-				// default to LEFT aligned
-		}
-
-		for (Object obj : line.getActions()) {
-			if (obj instanceof Content) {
-				Content content = (Content) obj;
-
-				if (obj instanceof StringContent) {
-					StringContent sc = (StringContent) obj;
-
-					g.drawString(sc.getText(), xOffset, yOffset);
-				} else if (obj instanceof ImageContent) {
-					ImageContent di = (ImageContent) obj;
-
-					renderImage(
-						di.getRelationshipId(),
-						xOffset,
-						yOffset - di.getHeight(),
-						di.getWidth(),
-						di.getHeight()
-					);
-				} else {
-					yOffset += content.getHeight();
-				}
-
-				xOffset += content.getWidth();
-			} else if (obj instanceof Color) {
-				g.setColor((Color) obj);
-			} else if (obj instanceof FontConfig) {
-				FontConfig fc = (FontConfig) obj;
-
-				g.setFont(fc.getFont());
-			} else {
-				LOG.debug("Unhandled render object " + obj.getClass());
-			}
-		}
-	}
-
-	private void renderTableRow(TableRow row, boolean forceOntoCurrentPage) {
-		int start = yOffset; // start every column from the same position
-		int maxYOffset = start;
-		int contentHeight = row.getContentHeight();
-
-		// Render as much content from each column onto the current page as possible
-		for (Column cell : row.getColumns()) {
-			yOffset = start;
-			render(cell, forceOntoCurrentPage, true, contentHeight);
-			maxYOffset = Math.max(maxYOffset, yOffset);
-		}
-
-		yOffset = maxYOffset;
-	}
-
-	private void renderImage(String relationshipId, int x, int y, int width, int height) {
-		try {
-			Image bi = getImage(relationshipId);
-
-			if (bi == null) {
-				LOG.error("Error creating image for " + relationshipId);
-			} else {
-				g.drawImage(
-					bi,
-					x,
-					y,
-					width,
-					height,
-					null
-				);
-			}
-		} catch (IOException ioe) {
-			LOG.error("Error reading image", ioe);
-		}
 	}
 }

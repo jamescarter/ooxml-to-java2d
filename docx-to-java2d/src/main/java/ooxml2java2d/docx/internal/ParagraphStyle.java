@@ -28,7 +28,7 @@ public class ParagraphStyle {
 	private int spaceAfter;
 	private Color color = Color.BLACK;
 	private FontConfig fontConfig = new FontConfig();
-	private Alignment alignment = Alignment.LEFT;
+	private HAlignment hAlignment = HAlignment.LEFT;
 
 	public ParagraphStyle() { }
 
@@ -38,7 +38,7 @@ public class ParagraphStyle {
 		this.spaceAfter = baseStyle.getSpaceAfter();
 		this.color = baseStyle.getColor();
 		this.fontConfig = new FontConfig(baseStyle.getFontConfig());
-		this.alignment = baseStyle.getAlignment();
+		this.hAlignment = baseStyle.getHAlignment();
 	}
 
 	public void setLineSpacing(int lineSpacing) {
@@ -65,8 +65,8 @@ public class ParagraphStyle {
 		fontConfig.setSize(size);
 	}
 
-	public void setAlignment(Alignment alignment) {
-		this.alignment = alignment;
+	public void setHAlignment(HAlignment hAlignment) {
+		this.hAlignment = hAlignment;
 	}
 
 	public void enableFontStyle(FontStyle style) {
@@ -93,8 +93,8 @@ public class ParagraphStyle {
 		return fontConfig;
 	}
 
-	public Alignment getAlignment() {
-		return alignment;
+	public HAlignment getHAlignment() {
+		return hAlignment;
 	}
 
 	public Rectangle2D getStringBoxSize(String text) {
@@ -109,7 +109,7 @@ public class ParagraphStyle {
 			.append("spaceAfter", spaceAfter)
 			.append("color", color)
 			.append("fontConfig", fontConfig)
-			.append("alignment", alignment)
+			.append("hAlignment", hAlignment)
 			.toString();
 	}
 }
