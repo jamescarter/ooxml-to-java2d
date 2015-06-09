@@ -157,6 +157,17 @@ public class GraphicsRenderer {
 
 		g2.setColor(origColor);
 
+		switch (column.getVAlignment()) {
+			case BOTTOM:
+				yOffset += contentHeight - column.getContentHeight();
+			break;
+			case CENTER:
+				yOffset += (contentHeight - column.getContentHeight()) / 2;
+			break;
+			default:
+				// default to TOP vertical alignment
+		}
+
 		for (Row row : column.getRows()) {
 			if (row instanceof Line) {
 				// Check if this line will fit onto the current page, otherwise create a new page
@@ -172,16 +183,18 @@ public class GraphicsRenderer {
 			} else if (row instanceof BlankRow) {
 				yOffset += row.getContentHeight();
 			} else if (row instanceof TableRow) {
+				TableRow tableRow = (TableRow) row;
+
 				++tableRowNesting;
-				renderTableRow((TableRow) row);
+				renderTableRow(tableRow);
 				--tableRowNesting;
 
 				// If this is the top-level table row and there's still content, create a new page and output it
 				if (tableRowNesting > 0) {
 					return;
-				} else if (row.getContentHeight() > 0) {
+				} else if (!tableRow.isEmpty()) {
 					nextPage();
-					renderTableRow((TableRow) row);
+					renderTableRow(tableRow);
 				}
 			} else {
 				LOG.debug("Unhandled row object " + row.getClass());
@@ -243,17 +256,15 @@ public class GraphicsRenderer {
 
 	private void renderTableRow(TableRow row) {
 		int start = yOffset; // start every column from the same position
-		int maxYOffset = start;
 		int contentHeight = row.getContentHeight();
 
 		// Render as much content from each column onto the current page as possible
 		for (Column cell : row.getColumns()) {
 			yOffset = start;
 			renderColumn(cell, true, contentHeight);
-			maxYOffset = Math.max(maxYOffset, yOffset);
 		}
 
-		yOffset = maxYOffset;
+		yOffset = start + contentHeight;
 	}
 
 	private void nextPage() {

@@ -49,6 +49,7 @@ public class DocxRendererTest {
 	private static final File TEST_TABBED2 = new File("src/test/resources/docx/tabbed2.docx");
 	private static final File TEST_ALIGNMENT = new File("src/test/resources/docx/alignment.docx");
 	private static final File TEST_TABLE_SIMPLE = new File("src/test/resources/docx/table_simple.docx");
+	private static final File TEST_TABLE_ALIGNMENT_VERTICAL = new File("src/test/resources/docx/table_alignment_vertical.docx");
 	private static final File TEST_TABLE_MERGE_HORIZONTAL = new File("src/test/resources/docx/table_merge_horizontal.docx");
 	private static final File TEST_TABLE_BORDERS = new File("src/test/resources/docx/table_borders.docx");
 	private static final File TEST_IMAGE_INLINE = new File("src/test/resources/docx/image_inline.docx");
@@ -482,6 +483,17 @@ public class DocxRendererTest {
 		assertEquals("Row 1 H2", r2c2.getText());
 		assertEquals(r1c1.getX(), r2c1.getX());
 		assertEquals(r2c1.getY(), r2c2.getY());
+	}
+
+	@Test
+	public void testTableAlignmentVertical() throws IOException {
+		new DocxRenderer(TEST_TABLE_ALIGNMENT_VERTICAL).render(builder);
+
+		List<DrawStringAction> actions = builder.getPages().get(0).getActions(DrawStringAction.class);
+
+		assertEquals(1409, actions.get(0).getY());
+		assertEquals(3239, actions.get(1).getY());
+		assertEquals(5070, actions.get(2).getY());
 	}
 
 	@Test

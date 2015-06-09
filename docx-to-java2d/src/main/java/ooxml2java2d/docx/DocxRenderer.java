@@ -34,6 +34,7 @@ import ooxml2java2d.docx.internal.GraphicsRenderer;
 import ooxml2java2d.docx.internal.PageInitiationAdapter;
 import ooxml2java2d.docx.internal.PageLayout;
 import ooxml2java2d.docx.internal.ParagraphStyle;
+import ooxml2java2d.docx.internal.VAlignment;
 import ooxml2java2d.docx.internal.content.Border;
 import ooxml2java2d.docx.internal.content.BorderStyle;
 import ooxml2java2d.docx.internal.content.Column;
@@ -60,6 +61,7 @@ import org.docx4j.openpackaging.parts.relationships.Namespaces;
 import org.docx4j.openpackaging.parts.relationships.RelationshipsPart;
 import org.docx4j.wml.Br;
 import org.docx4j.wml.CTBorder;
+import org.docx4j.wml.CTHeight;
 import org.docx4j.wml.ContentAccessor;
 import org.docx4j.wml.Drawing;
 import org.docx4j.wml.Lvl;
@@ -457,6 +459,7 @@ public class DocxRenderer implements Renderer {
 				int xOffset = column.getXOffset();
 				int col = 0;
 				List<Column> cells = new ArrayList<>();
+				int minHeight = getMinRowHeight(tableRow);
 
 				for (Object rowObj : tableRow.getContent()) {
 					if (rowObj instanceof JAXBElement) {
@@ -465,11 +468,25 @@ public class DocxRenderer implements Renderer {
 						if (element.getDeclaredType().equals(Tc.class)) {
 							Tc tableCell = (Tc) element.getValue();
 							int width = columnWidths.get(col);
+							VAlignment vAlignment = VAlignment.TOP;
 							Color fill = null;
 							Border top = null;
 							Border right = null;
 							Border bottom = null;
 							Border left = null;
+
+							if (tableCell.getTcPr().getVAlign() != null) {
+								switch (tableCell.getTcPr().getVAlign().getVal()) {
+									case BOTTOM:
+										vAlignment = VAlignment.BOTTOM;
+									break;
+									case CENTER:
+										vAlignment = VAlignment.CENTER;
+									break;
+									default:
+										// default to TOP vertical alignment
+								}
+							}
 
 							// Horizontal cell merge
 							if (tableCell.getTcPr().getGridSpan() != null) {
@@ -493,7 +510,7 @@ public class DocxRenderer implements Renderer {
 								left = getBorder(borders.getLeft());
 							}
 
-							Column cell = new Column(xOffset, width, fill, top, right, bottom, left);
+							Column cell = new Column(xOffset, width, vAlignment, fill, top, right, bottom, left);
 
 							cell.setBuffered(true);
 
@@ -510,7 +527,7 @@ public class DocxRenderer implements Renderer {
 					}
 				}
 
-				column.addTableRow(new TableRow(cells));
+				column.addTableRow(new TableRow(minHeight, cells));
 				renderer.renderColumn(column);
 			}
 		}
@@ -718,6 +735,20 @@ public class DocxRenderer implements Renderer {
 		}
 
 		return border;
+	}
+
+	private int getMinRowHeight(Tr tableRow) {
+		if (tableRow.getTrPr() != null) {
+			for (JAXBElement<?> element : tableRow.getTrPr().getCnfStyleOrDivIdOrGridBefore()) {
+				if (element.getValue() instanceof CTHeight) {
+					CTHeight height = (CTHeight) element.getValue();
+
+					return getValue(height.getVal());
+				}
+			}
+		}
+
+		return 0;
 	}
 
 	private int getValue(Integer i) {

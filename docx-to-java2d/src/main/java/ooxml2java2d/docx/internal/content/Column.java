@@ -20,6 +20,8 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 
+import ooxml2java2d.docx.internal.VAlignment;
+
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
@@ -29,6 +31,7 @@ import org.apache.commons.lang.builder.ToStringStyle;
 public class Column {
 	private int xOffset;
 	private int width;
+	private VAlignment vAlignment;
 	private Color fill;
 	private Border top;
 	private Border right;
@@ -39,12 +42,13 @@ public class Column {
 	private Line line;
 
 	public Column(int xOffset, int width) {
-		this(xOffset, width, null, null, null, null, null);
+		this(xOffset, width, VAlignment.TOP, null, null, null, null, null);
 	}
 
-	public Column(int xOffset, int width, Color fill, Border top, Border right, Border bottom, Border left) {
+	public Column(int xOffset, int width, VAlignment vAlignment, Color fill, Border top, Border right, Border bottom, Border left) {
 		this.xOffset = xOffset;
 		this.width = width;
+		this.vAlignment = vAlignment;
 		this.fill = fill;
 		this.top = top;
 		this.right = right;
@@ -58,6 +62,10 @@ public class Column {
 
 	public int getWidth() {
 		return width;
+	}
+
+	public VAlignment getVAlignment() {
+		return vAlignment;
 	}
 
 	public Color getFill() {
@@ -171,6 +179,7 @@ public class Column {
 		return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
 			.append("xOffset", xOffset)
 			.append("width", width)
+			.append("vAlignment", vAlignment)
 			.append("fill", fill)
 			.append("top", top)
 			.append("right", right)

@@ -22,9 +22,11 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
 public class TableRow implements Row {
+	private int minHeight;
 	private List<Column> columns;
 
-	public TableRow(List<Column> columns) {
+	public TableRow(int minHeight, List<Column> columns) {
+		this.minHeight = minHeight;
 		this.columns = columns;
 	}
 
@@ -34,13 +36,23 @@ public class TableRow implements Row {
 
 	@Override
 	public int getContentHeight() {
-		int maxHeight = 0;
+		int maxHeight = minHeight;
 
 		for (Column column : columns) {
 			maxHeight = Math.max(maxHeight, column.getContentHeight());
 		}
 
 		return maxHeight;
+	}
+
+	public boolean isEmpty() {
+		for (Column column : columns) {
+			if (!column.isEmpty()) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	@Override
