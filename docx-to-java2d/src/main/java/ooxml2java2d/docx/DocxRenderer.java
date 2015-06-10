@@ -66,6 +66,7 @@ import org.docx4j.wml.ContentAccessor;
 import org.docx4j.wml.Drawing;
 import org.docx4j.wml.Lvl;
 import org.docx4j.wml.P;
+import org.docx4j.wml.P.Hyperlink;
 import org.docx4j.wml.PPr;
 import org.docx4j.wml.PPrBase.NumPr;
 import org.docx4j.wml.PPrBase.PStyle;
@@ -276,6 +277,8 @@ public class DocxRenderer implements Renderer {
 					processTable((Tbl) element.getValue(), column);
 				} else if (element.getDeclaredType().equals(Drawing.class)) {
 					processDrawing((Drawing) element.getValue(), column);
+				} else if (element.getDeclaredType().equals(Hyperlink.class)) {
+					processHyperlink((Hyperlink) element.getValue(), column);
 				} else {
 					LOG.debug("Unhandled JAXBElement object " + element.getDeclaredType());
 				}
@@ -561,6 +564,10 @@ public class DocxRenderer implements Renderer {
 				LOG.debug("Unhandled drawing object " + obj.getClass());
 			}
 		}
+	}
+
+	private void processHyperlink(Hyperlink link, Column column) {
+		iterateContentParts(link, column);
 	}
 
 	private void processGraphic(CTPositiveSize2D extent, GraphicData graphicData, Column column) {

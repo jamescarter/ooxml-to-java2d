@@ -43,6 +43,7 @@ public class DocxRendererTest {
 	private static final File TEST_LINE_HEIGHT = new File("src/test/resources/docx/line_height.docx");
 	private static final File TEST_TEXT_COLOR = new File("src/test/resources/docx/text_color.docx");
 	private static final File TEST_HEADER_STYLE = new File("src/test/resources/docx/header_style.docx");
+	private static final File TEST_HYPERLINK = new File("src/test/resources/docx/hyperlink.docx");
 	private static final File TEST_WORD_WRAP = new File("src/test/resources/docx/word_wrap.docx");
 	private static final File TEST_WORD_WRAP_CONTINUOUS = new File("src/test/resources/docx/word_wrap_continuous.docx");
 	private static final File TEST_TABBED = new File("src/test/resources/docx/tabbed.docx");
@@ -310,6 +311,17 @@ public class DocxRendererTest {
 		assertEquals(f5.getStyle(), Font.BOLD);
 		assertEquals("Header 3", ((DrawStringAction) actions.get(12)).getText());
 		assertEquals(new Color(128, 128, 128), h3c);
+	}
+
+	@Test
+	public void testHyperlink() throws IOException {
+		new DocxRenderer(TEST_HYPERLINK).render(builder);
+
+		List<DrawStringAction> actions = builder.getPages().get(0).getActions(DrawStringAction.class);
+
+		assertEquals("Visit ", actions.get(0).getText());
+		assertEquals("Google", actions.get(1).getText());
+		assertEquals(" to search the web.", actions.get(2).getText());
 	}
 
 	@Test
