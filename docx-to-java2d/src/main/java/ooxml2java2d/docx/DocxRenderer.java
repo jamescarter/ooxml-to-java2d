@@ -783,7 +783,7 @@ public class DocxRenderer implements Renderer {
 			int size = getValue(ctBorder.getSz());
 
 			if (size > 0) {
-				border = new Border(getColor(ctBorder.getColor(), Color.BLACK), size / 8 * 20, BorderStyle.SINGLE);
+				border = new Border(getColor(ctBorder.getColor(), Color.BLACK), (int) (size / 8.0 * 20.0), BorderStyle.SINGLE);
 			}
 		}
 

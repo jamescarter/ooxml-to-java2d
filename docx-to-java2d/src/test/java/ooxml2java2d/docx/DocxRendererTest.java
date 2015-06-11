@@ -19,8 +19,10 @@ package ooxml2java2d.docx;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.Stroke;
 import java.awt.font.TextAttribute;
 import java.io.File;
 import java.io.IOException;
@@ -551,9 +553,16 @@ public class DocxRendererTest {
 	public void testTableBorders() throws IOException {
 		new DocxRenderer(TEST_TABLE_BORDERS).render(builder);
 
-		List<DrawLine> actions = builder.getPages().get(0).getActions(DrawLine.class);
+		List<MockGraphics2D> pages = builder.getPages();
+		List<DrawLine> drawActions = pages.get(0).getActions(DrawLine.class);
+		List<BasicStroke> strokeActions = pages.get(0).getActions(BasicStroke.class);
 
-		assertEquals(12, actions.size());
+		assertEquals(12, drawActions.size());
+		assertEquals(12, strokeActions.size());
+
+		for (BasicStroke s : strokeActions) {
+			assertTrue(s.getLineWidth() > 0);
+		}
 	}
 
 	@Test
