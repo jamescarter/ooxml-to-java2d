@@ -26,6 +26,9 @@ public class ParagraphStyle {
 	private int lineSpacing;
 	private int spaceBefore;
 	private int spaceAfter;
+	private int indentLeft;
+	private int indentRight;
+	private int indentHanging;
 	private Color color = Color.BLACK;
 	private FontConfig fontConfig = new FontConfig();
 	private HAlignment hAlignment = HAlignment.LEFT;
@@ -36,6 +39,9 @@ public class ParagraphStyle {
 		this.lineSpacing = baseStyle.getLineSpacing();
 		this.spaceBefore = baseStyle.getSpaceBefore();
 		this.spaceAfter = baseStyle.getSpaceAfter();
+		this.indentLeft = baseStyle.getIndentLeft();
+		this.indentRight = baseStyle.getIndentRight();
+		this.indentHanging = baseStyle.getIndentHanging();
 		this.color = baseStyle.getColor();
 		this.fontConfig = new FontConfig(baseStyle.getFontConfig());
 		this.hAlignment = baseStyle.getHAlignment();
@@ -51,6 +57,18 @@ public class ParagraphStyle {
 
 	public void setSpaceAfter(int spaceAfter) {
 		this.spaceAfter = spaceAfter;
+	}
+
+	public void setIndentLeft(int indentLeft) {
+		this.indentLeft = indentLeft;
+	}
+
+	public void setIndentRight(int indentRight) {
+		this.indentRight = indentRight;
+	}
+
+	public void setIndentHanging(int indentHanging) {
+		this.indentHanging = indentHanging;
 	}
 
 	public void setColor(Color color) {
@@ -85,6 +103,18 @@ public class ParagraphStyle {
 		return spaceAfter;
 	}
 
+	public int getIndentLeft() {
+		return indentLeft;
+	}
+
+	public int getIndentRight() {
+		return indentRight;
+	}
+
+	public int getIndentHanging() {
+		return indentHanging;
+	}
+
 	public Color getColor() {
 		return color;
 	}
@@ -107,6 +137,9 @@ public class ParagraphStyle {
 			.append("lineSpacing", lineSpacing)
 			.append("spaceBefore", spaceBefore)
 			.append("spaceAfter", spaceAfter)
+			.append("indentLeft", indentLeft)
+			.append("indentRight", indentRight)
+			.append("indentHanging", indentHanging)
 			.append("color", color)
 			.append("fontConfig", fontConfig)
 			.append("hAlignment", hAlignment)

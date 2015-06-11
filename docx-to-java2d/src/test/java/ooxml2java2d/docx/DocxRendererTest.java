@@ -64,6 +64,7 @@ public class DocxRendererTest {
 	private static final File TEST_EMPTY_PARAGRAPH = new File("src/test/resources/docx/empty_paragraph.docx");
 	private static final File TEST_PARAGRAPH_BREAK = new File("src/test/resources/docx/paragraph_break.docx");
 	private static final File TEST_PARAGRAPH_SPACING = new File("src/test/resources/docx/paragraph_spacing.docx");
+	private static final File TEST_PARAGRAPH_INDENT = new File("src/test/resources/docx/paragraph_indent.docx");
 	private static final File TEST_LIST_BULLET = new File("src/test/resources/docx/list_bullet.docx");
 	private static final File TEST_FILL_COLOR_TABLE = new File("src/test/resources/docx/fill_color_table.docx");
 	private MockGraphicsBuilder builder;
@@ -737,6 +738,22 @@ public class DocxRendererTest {
 		assertEquals("B", actions.get(0).getText());
 	}
 
+	@Test
+	public void testParagraphIndent() throws IOException {
+		new DocxRenderer(TEST_PARAGRAPH_INDENT).render(builder);
+
+		List<DrawStringAction> actions = builder.getPages().get(0).getActions(DrawStringAction.class);
+
+		DrawStringAction line1 = actions.get(0);
+		DrawStringAction line2 = actions.get(1);
+
+		assertEquals("This paragraph has a 3cm before and 6cm", line1.getText());
+		assertEquals("after indent. Some text will be on a new line.", line2.getText());
+
+		assertEquals(2835, line1.getX());
+		assertEquals(line1.getX(), line2.getX());
+	}
+
 	/*
 	 * Tests multilevel list of bullets is properly indented
 	 */
@@ -770,9 +787,9 @@ public class DocxRendererTest {
 		assertEquals("Level 2 #2", t4.getText());
 		assertEquals("Level 1 #2", t5.getText());
 
-		assertEquals(1938, t1.getX());
-		assertEquals(2298, t2.getX());
-		assertEquals(2658, t3.getX());
+		assertEquals(2298, t1.getX());
+		assertEquals(2658, t2.getX());
+		assertEquals(3018, t3.getX());
 		assertEquals(t2.getX(), t4.getX());
 		assertEquals(t1.getX(), t5.getX());
 	}

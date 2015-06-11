@@ -41,6 +41,7 @@ public class Line implements Row {
 		return contentWidth;
 	}
 
+	@Override
 	public int getContentHeight() {
 		return contentHeight;
 	}

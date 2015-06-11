@@ -28,7 +28,7 @@ import org.apache.commons.lang.builder.ToStringStyle;
 /**
  * Columns represent an area of a page with contents that do not exceed the specified width.
  */
-public class Column {
+public class Column implements Row {
 	private int xOffset;
 	private int width;
 	private VAlignment vAlignment;
@@ -88,6 +88,7 @@ public class Column {
 		return left;
 	}
 
+	@Override
 	public int getContentHeight() {
 		int height = 0;
 
@@ -150,8 +151,9 @@ public class Column {
 		getCurrentLine().addContentForced(content);
 	}
 
-	public void addTableRow(TableRow tableRow) {
-		rows.add(tableRow);
+	public void addRow(Row row) {
+		addVerticalSpace(0);
+		rows.add(row);
 	}
 
 	public void addAction(Object action) {

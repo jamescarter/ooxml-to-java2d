@@ -68,6 +68,7 @@ import org.docx4j.wml.Lvl;
 import org.docx4j.wml.P;
 import org.docx4j.wml.P.Hyperlink;
 import org.docx4j.wml.PPr;
+import org.docx4j.wml.PPrBase.Ind;
 import org.docx4j.wml.PPrBase.NumPr;
 import org.docx4j.wml.PPrBase.PStyle;
 import org.docx4j.wml.PPrBase.Spacing;
@@ -297,6 +298,8 @@ public class DocxRenderer implements Renderer {
 		column.addAction(paraStyle.getHAlignment());
 		column.addVerticalSpace(paraStyle.getSpaceBefore());
 
+		Column paraContent = new Column(column.getXOffset() + paraStyle.getIndentLeft(), column.getWidth() - paraStyle.getIndentLeft() - paraStyle.getIndentRight());
+
 		if (properties != null && properties.getNumPr() != null) {
 			NumPr numberingProperties = properties.getNumPr();
 			String abstractNumId = numberingProperties.getNumId().getVal().toString();
@@ -313,9 +316,9 @@ public class DocxRenderer implements Renderer {
 
 					Rectangle2D bounds = paraStyle.getStringBoxSize(BULLET);
 
-					column.addHorizontalSpace(getValue(lvl.getPPr().getInd().getLeft()) - getValue(lvl.getPPr().getInd().getHanging()), paraStyle.getLineSpacing());
-					column.addContent(new StringContent((int) bounds.getWidth(), (int) bounds.getHeight(), BULLET), paraStyle.getLineSpacing());
-					column.addHorizontalSpace(getValue(lvl.getPPr().getInd().getHanging()), paraStyle.getLineSpacing());
+					paraContent = new Column(column.getXOffset() + paraStyle.getIndentLeft(), column.getWidth() - paraStyle.getIndentLeft());
+					paraContent.addContent(new StringContent((int) bounds.getWidth(), (int) bounds.getHeight(), BULLET), paraStyle.getLineSpacing());
+					paraContent.addHorizontalSpace(paraStyle.getIndentHanging(), paraStyle.getLineSpacing());
 				}
 			}
 		}
@@ -323,9 +326,14 @@ public class DocxRenderer implements Renderer {
 		if (properties != null && p.getContent().size() == 0) {
 			column.addVerticalSpace((int) paraStyle.getStringBoxSize("").getHeight());
 		} else {
-			iterateContentParts(p, column);
+			paraContent.setBuffered(column.isBuffered());
+
+			iterateContentParts(p, paraContent);
+
+			paraContent.setBuffered(false);
 		}
 
+		column.addRow(paraContent);
 		column.addVerticalSpace(paraStyle.getSpaceAfter());
 
 		renderer.renderColumn(column);
@@ -530,7 +538,7 @@ public class DocxRenderer implements Renderer {
 					}
 				}
 
-				column.addTableRow(new TableRow(minHeight, cells));
+				column.addRow(new TableRow(minHeight, cells));
 				renderer.renderColumn(column);
 			}
 		}
@@ -623,16 +631,24 @@ public class DocxRenderer implements Renderer {
 
 			if (spacing != null) {
 				if (spacing.getLine() != null) {
-					newStyle.setLineSpacing(spacing.getLine().intValue());
+					newStyle.setLineSpacing(getValue(spacing.getLine()));
 				}
 
 				if (spacing.getBefore() != null) {
-					newStyle.setSpaceBefore(spacing.getBefore().intValue());
+					newStyle.setSpaceBefore(getValue(spacing.getBefore()));
 				}
 
 				if (spacing.getAfter() != null) {
-					newStyle.setSpaceAfter(spacing.getAfter().intValue());
+					newStyle.setSpaceAfter(getValue(spacing.getAfter()));
 				}
+			}
+
+			Ind indent = properties.getInd();
+
+			if (indent != null) {
+				newStyle.setIndentLeft(getValue(indent.getLeft()));
+				newStyle.setIndentRight(getValue(indent.getRight()));
+				newStyle.setIndentHanging(getValue(indent.getHanging()));
 			}
 
 			if (properties.getJc() != null) {

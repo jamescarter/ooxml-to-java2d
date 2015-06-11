@@ -169,7 +169,15 @@ public class GraphicsRenderer {
 		}
 
 		for (Row row : column.getRows()) {
-			if (row instanceof Line) {
+			if (row instanceof Column) {
+				Column subColumn = (Column) row;
+
+				renderColumn(subColumn, delayPageCreation, row.getContentHeight());
+
+				if (!subColumn.isEmpty()) {
+					return;
+				}
+			} else if (row instanceof Line) {
 				// Check if this line will fit onto the current page, otherwise create a new page
 				if (yOffset + row.getContentHeight() > endPosition) {
 					if (delayPageCreation) {
