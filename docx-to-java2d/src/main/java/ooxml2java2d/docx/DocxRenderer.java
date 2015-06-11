@@ -62,6 +62,7 @@ import org.docx4j.openpackaging.parts.relationships.RelationshipsPart;
 import org.docx4j.wml.Br;
 import org.docx4j.wml.CTBorder;
 import org.docx4j.wml.CTHeight;
+import org.docx4j.wml.CTTblCellMar;
 import org.docx4j.wml.ContentAccessor;
 import org.docx4j.wml.Drawing;
 import org.docx4j.wml.Lvl;
@@ -82,7 +83,9 @@ import org.docx4j.wml.SectPr.PgSz;
 import org.docx4j.wml.Style;
 import org.docx4j.wml.Tbl;
 import org.docx4j.wml.TblGridCol;
+import org.docx4j.wml.TblWidth;
 import org.docx4j.wml.Tc;
+import org.docx4j.wml.TcMar;
 import org.docx4j.wml.TcPrInner.TcBorders;
 import org.docx4j.wml.Text;
 import org.docx4j.wml.Tr;
@@ -464,6 +467,19 @@ public class DocxRenderer implements Renderer {
 			columnWidths.add(tableColumn.getW().intValue());
 		}
 
+		CTTblCellMar tableMargins = table.getTblPr().getTblCellMar();
+		int topMargin = 0;
+		int rightMargin = 0;
+		int bottomMargin = 0;
+		int leftMargin = 0;
+
+		if (tableMargins != null) {
+			topMargin = getValue(tableMargins.getTop());
+			rightMargin = getValue(tableMargins.getRight());
+			bottomMargin = getValue(tableMargins.getBottom());
+			leftMargin = getValue(tableMargins.getLeft());
+		}
+
 		for (Object tblObj : table.getContent()) {
 			if (tblObj instanceof Tr) {
 				Tr tableRow = (Tr) tblObj;
@@ -485,6 +501,15 @@ public class DocxRenderer implements Renderer {
 							Border right = null;
 							Border bottom = null;
 							Border left = null;
+
+							TcMar cellMargins = tableCell.getTcPr().getTcMar();
+
+							if (cellMargins != null) {
+								topMargin = getValue(cellMargins.getTop(), topMargin);
+								rightMargin = getValue(cellMargins.getRight(), rightMargin);
+								bottomMargin = getValue(cellMargins.getBottom(), bottomMargin);
+								leftMargin = getValue(cellMargins.getLeft(), leftMargin);
+							}
 
 							if (tableCell.getTcPr().getVAlign() != null) {
 								switch (tableCell.getTcPr().getVAlign().getVal()) {
@@ -522,13 +547,18 @@ public class DocxRenderer implements Renderer {
 							}
 
 							Column cell = new Column(xOffset, width, vAlignment, fill, top, right, bottom, left);
+							cell.addVerticalSpace(topMargin);
 
-							cell.setBuffered(true);
+							// Add actual cell contents to an inner column to account for margins
+							Column cellContent = new Column(xOffset + leftMargin, width - leftMargin - rightMargin);
 
-							iterateContentParts(tableCell, cell);
+							cellContent.setBuffered(true);
 
-							cell.setBuffered(false);
+							iterateContentParts(tableCell, cellContent);
 
+							cellContent.setBuffered(false);
+							cell.addRow(cellContent);
+							cell.addVerticalSpace(bottomMargin);
 							xOffset += cell.getWidth();
 							++col;
 							cells.add(cell);
@@ -779,6 +809,18 @@ public class DocxRenderer implements Renderer {
 	}
 
 	private int getValue(BigInteger bi) {
-		return (bi == null) ? 0 : bi.intValue();
+		return getValue(bi, 0);
+	}
+
+	private int getValue(BigInteger bi, int defaultValue) {
+		return (bi == null) ? defaultValue : bi.intValue();
+	}
+
+	private int getValue(TblWidth width) {
+		return getValue(width, 0);
+	}
+
+	private int getValue(TblWidth width, int defaultValue) {
+		return (width == null) ? defaultValue : getValue(width.getW(), defaultValue);
 	}
 }

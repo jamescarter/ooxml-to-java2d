@@ -53,6 +53,7 @@ public class DocxRendererTest {
 	private static final File TEST_TABLE_ALIGNMENT_VERTICAL = new File("src/test/resources/docx/table_alignment_vertical.docx");
 	private static final File TEST_TABLE_MERGE_HORIZONTAL = new File("src/test/resources/docx/table_merge_horizontal.docx");
 	private static final File TEST_TABLE_BORDERS = new File("src/test/resources/docx/table_borders.docx");
+	private static final File TEST_TABLE_SPACING = new File("src/test/resources/docx/table_spacing.docx");
 	private static final File TEST_IMAGE_INLINE = new File("src/test/resources/docx/image_inline.docx");
 	private static final File TEST_IMAGE_ANCHOR = new File("src/test/resources/docx/image_anchor.docx");
 	private static final File TEST_IMAGE_ANCHOR_PAGE_WRAP_BG = new File("src/test/resources/docx/image_anchor_page_wrap_background.docx");
@@ -248,7 +249,6 @@ public class DocxRendererTest {
 		assertEquals("This is the third paragraph.", actions.get(2).getText());
 		assertEquals("This is the fourth paragraph.", actions.get(3).getText());
 
-		// TODO: Line spacing between paragraphs is not perfect, needs further checking
 		int y = actions.get(0).getY();
 
 		assertEquals(y += 475, actions.get(1).getY());
@@ -479,8 +479,8 @@ public class DocxRendererTest {
 
 		DrawStringAction r1c1 = actions.get(0);
 		assertEquals("Header 1", r1c1.getText());
-		assertEquals(1134, r1c1.getX());
-		assertEquals(1409, r1c1.getY());
+		assertEquals(1188, r1c1.getX());
+		assertEquals(1464, r1c1.getY());
 
 		DrawStringAction r1c2 = actions.get(1);
 		assertEquals("Header 2", r1c2.getText());
@@ -490,7 +490,7 @@ public class DocxRendererTest {
 		DrawStringAction r2c1 = actions.get(2);
 		assertEquals("Row 1 H1", r2c1.getText());
 		assertEquals(r1c1.getX(), r2c1.getX());
-		assertEquals(1684, r2c1.getY());
+		assertEquals(1849, r2c1.getY());
 
 		DrawStringAction r2c2 = actions.get(3);
 		assertEquals("Row 1 H2", r2c2.getText());
@@ -504,9 +504,9 @@ public class DocxRendererTest {
 
 		List<DrawStringAction> actions = builder.getPages().get(0).getActions(DrawStringAction.class);
 
-		assertEquals(1409, actions.get(0).getY());
+		assertEquals(1464, actions.get(0).getY());
 		assertEquals(3239, actions.get(1).getY());
-		assertEquals(5070, actions.get(2).getY());
+		assertEquals(5015, actions.get(2).getY());
 	}
 
 	@Test
@@ -554,6 +554,21 @@ public class DocxRendererTest {
 		List<DrawLine> actions = builder.getPages().get(0).getActions(DrawLine.class);
 
 		assertEquals(12, actions.size());
+	}
+
+	@Test
+	public void testTableSpacing() throws IOException {
+		new DocxRenderer(TEST_TABLE_SPACING).render(builder);
+
+		List<DrawStringAction> actions = builder.getPages().get(0).getActions(DrawStringAction.class);
+
+		assertEquals(1, actions.size());
+
+		DrawStringAction hw = actions.get(0);
+
+		assertEquals("Hello, World!", hw.getText());
+		assertEquals(3401, hw.getX());
+		assertEquals(1976, hw.getY());
 	}
 
 	@Test
@@ -663,30 +678,35 @@ public class DocxRendererTest {
 
 		List<MockGraphics2D> pages = builder.getPages();
 
-		// Check that the second page has the content we're expecting
-		assertEquals(2, pages.size());
+		List<DrawStringAction> p1Actions = pages.get(0).getActions(DrawStringAction.class);
+		List<DrawStringAction> p2Actions = pages.get(1).getActions(DrawStringAction.class);
 
-		List<DrawStringAction> actions = pages.get(1).getActions(DrawStringAction.class);
+		DrawStringAction c = p1Actions.get(2);
+		DrawStringAction d = p1Actions.get(3);
+		DrawStringAction e = p1Actions.get(4);
+		DrawStringAction f = p2Actions.get(0);
+		DrawStringAction g = p2Actions.get(1);
+		DrawStringAction h = p2Actions.get(2);
 
-		DrawStringAction c = actions.get(0);
-		DrawStringAction d = actions.get(0);
-		DrawStringAction e = actions.get(0);
-		DrawStringAction g = actions.get(0);
-		DrawStringAction f = actions.get(0);
-		DrawStringAction h = actions.get(0);
+		assertEquals("C", c.getText());
+		assertEquals("D", d.getText());
+		assertEquals("E", e.getText());
+		assertEquals("F", f.getText());
+		assertEquals("G", g.getText());
+		assertEquals("H", h.getText());
 
 		// check row 2 lines up horizontally
+		assertEquals(c.getY(), d.getY());
 		assertEquals(c.getY(), e.getY());
-		assertEquals(c.getY(), g.getY());
 
 		// check row 3 lines up horizontally
-		assertEquals(d.getY(), f.getY());
-		assertEquals(d.getY(), h.getY());
+		assertEquals(f.getY(), h.getY());
+		assertEquals(f.getY(), h.getY());
 
 		// check columns line up vertically
-		assertEquals(c.getX(), d.getX());
-		assertEquals(e.getX(), f.getX());
-		assertEquals(g.getX(), h.getX());
+		assertEquals(c.getX(), f.getX());
+		assertEquals(d.getX(), g.getX());
+		assertEquals(e.getX(), h.getX());
 	}
 
 	@Test
@@ -810,17 +830,17 @@ public class DocxRendererTest {
 		int y = r1.getY();
 
 		assertEquals(3212, r1.getWidth());
-		assertEquals(550, r1.getHeight());
+		assertEquals(660, r1.getHeight());
 
 		assertTrue(r2.getX() > x);
 		assertEquals(y, r2.getY());
 		assertEquals(6425, r2.getWidth());
-		assertEquals(550, r2.getHeight());
+		assertEquals(r1.getHeight(), r2.getHeight());
 
 		assertEquals(x, r3.getX());
 		assertTrue(r3.getY() > y);
 		assertEquals(3212, r3.getWidth());
-		assertEquals(825, r3.getHeight());
+		assertEquals(935, r3.getHeight());
 	}
 
 	private void assertFontAttributes(Font font, Object ... expectedStyles) {
