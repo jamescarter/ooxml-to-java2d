@@ -3,7 +3,7 @@
   <groupId>com.github.jamescarter.ooxml2java2d</groupId>
   <artifactId>ooxml2java2d</artifactId>
   <packaging>pom</packaging>
-  <version>1.0.1-SNAPSHOT</version>
+  <version>1.1.0</version>
   <name>OOXML to Java2D</name>
   <description>A library for converting OOXML files to Java2D</description>
   <url>https://github.com/jamescarter/ooxml2java2d</url>
@@ -31,7 +31,7 @@
     <connection>scm:git:git@github.com:jamescarter/ooxml2java2d.git</connection>
     <developerConnection>scm:git:git@github.com:jamescarter/ooxml2java2d.git</developerConnection>
     <url>git@github.com:jamescarter/ooxml2java2d.git</url>
-    <tag>HEAD</tag>
+    <tag>ooxml2java2d-1.1.0</tag>
   </scm>
 
   <distributionManagement>
