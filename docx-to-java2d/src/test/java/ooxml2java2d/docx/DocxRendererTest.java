@@ -22,7 +22,6 @@ import static org.junit.Assert.assertTrue;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.Stroke;
 import java.awt.font.TextAttribute;
 import java.io.File;
 import java.io.IOException;
@@ -506,8 +505,8 @@ public class DocxRendererTest {
 
 		List<DrawStringAction> actions = builder.getPages().get(0).getActions(DrawStringAction.class);
 
-		assertEquals(1464, actions.get(0).getY());
-		assertEquals(3239, actions.get(1).getY());
+		assertEquals(1468, actions.get(0).getY());
+		assertEquals(3241, actions.get(1).getY());
 		assertEquals(5015, actions.get(2).getY());
 	}
 
@@ -577,7 +576,7 @@ public class DocxRendererTest {
 
 		assertEquals("Hello, World!", hw.getText());
 		assertEquals(3401, hw.getX());
-		assertEquals(1976, hw.getY());
+		assertEquals(1980, hw.getY());
 	}
 
 	@Test
@@ -839,7 +838,7 @@ public class DocxRendererTest {
 		int y = r1.getY();
 
 		assertEquals(3212, r1.getWidth());
-		assertEquals(660, r1.getHeight());
+		assertEquals(668, r1.getHeight());
 
 		assertTrue(r2.getX() > x);
 		assertEquals(y, r2.getY());
@@ -849,7 +848,7 @@ public class DocxRendererTest {
 		assertEquals(x, r3.getX());
 		assertTrue(r3.getY() > y);
 		assertEquals(3212, r3.getWidth());
-		assertEquals(935, r3.getHeight());
+		assertEquals(947, r3.getHeight());
 	}
 
 	private void assertFontAttributes(Font font, Object ... expectedStyles) {
