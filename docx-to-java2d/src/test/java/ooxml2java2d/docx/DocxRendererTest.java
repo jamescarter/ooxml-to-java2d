@@ -46,6 +46,7 @@ public class DocxRendererTest {
 	private static final File TEST_HEADER_STYLE = new File("src/test/resources/docx/header_style.docx");
 	private static final File TEST_HYPERLINK = new File("src/test/resources/docx/hyperlink.docx");
 	private static final File TEST_WORD_WRAP = new File("src/test/resources/docx/word_wrap.docx");
+	private static final File TEST_WORD_WRAP2 = new File("src/test/resources/docx/word_wrap2.docx");
 	private static final File TEST_WORD_WRAP_CONTINUOUS = new File("src/test/resources/docx/word_wrap_continuous.docx");
 	private static final File TEST_TABBED = new File("src/test/resources/docx/tabbed.docx");
 	private static final File TEST_TABBED2 = new File("src/test/resources/docx/tabbed2.docx");
@@ -333,31 +334,53 @@ public class DocxRendererTest {
 		List<DrawStringAction> actions = builder.getPages().get(0).getActions(DrawStringAction.class);
 
 		DrawStringAction line1 = actions.get(0);
-		assertEquals("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam aliquet", line1.getText());
+		assertEquals("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam aliquet ", line1.getText());
 
 		DrawStringAction line2 = actions.get(1);
-		assertEquals("vehicula magna, sed maximus tellus imperdiet sit amet. Maecenas eu", line2.getText());
+		assertEquals("vehicula magna, sed maximus tellus imperdiet sit amet. Maecenas eu ", line2.getText());
 		assertTrue(line2.getY() > line1.getY());
 
 		DrawStringAction line3 = actions.get(2);
-		assertEquals("maximus dolor. Phasellus tempor, enim non mattis porta, neque est", line3.getText());
+		assertEquals("maximus dolor. Phasellus tempor, enim non mattis porta, neque est ", line3.getText());
 		assertTrue(line3.getY() > line2.getY());
 
 		DrawStringAction line4 = actions.get(3);
-		assertEquals("elementum sapien, vel blandit elit turpis at orci. Sed in dolor nulla. Nunc", line4.getText());
+		assertEquals("elementum sapien, vel blandit elit turpis at orci. Sed in dolor nulla. Nunc ", line4.getText());
 		assertTrue(line4.getY() > line3.getY());
 
 		DrawStringAction line5 = actions.get(4);
-		assertEquals("aliquet enim eu orci finibus tincidunt. Fusce consequat blandit tellus, vel", line5.getText());
+		assertEquals("aliquet enim eu orci finibus tincidunt. Fusce consequat blandit tellus, vel ", line5.getText());
 		assertTrue(line5.getY() > line4.getY());
 
 		DrawStringAction line6 = actions.get(5);
-		assertEquals("auctor dui dictum sollicitudin. Maecenas feugiat, augue vitae egestas", line6.getText());
+		assertEquals("auctor dui dictum sollicitudin. Maecenas feugiat, augue vitae egestas ", line6.getText());
 		assertTrue(line6.getY() > line5.getY());
 
 		DrawStringAction line7 = actions.get(6);
 		assertEquals("iaculis, neque nunc sodales felis, non tempor lorem nisi nec arcu.", line7.getText());
 		assertTrue(line7.getY() > line6.getY());
+	}
+
+	@Test
+	public void testWordWrap2() throws IOException {
+		new DocxRenderer(TEST_WORD_WRAP2).render(builder);
+
+		List<DrawStringAction> actions = builder.getPages().get(0).getActions(DrawStringAction.class);
+
+		DrawStringAction line1a = actions.get(0);
+		assertEquals("Aaa bbb ccc ddd eee fff ggg hhh iii jjj kkk lll mmm nnn ooo ppp qqq rrr sss ttt uuu vvv ", line1a.getText());
+
+		DrawStringAction line1b = actions.get(1);
+		assertEquals("www", line1b.getText());
+		assertEquals(line1a.getY(), line1b.getY());
+
+		DrawStringAction line1c = actions.get(2);
+		assertEquals(" xx yy", line1c.getText());
+		assertEquals(line1a.getY(), line1c.getY());
+
+		DrawStringAction line2 = actions.get(3);
+		assertEquals("zz", line2.getText());
+		assertTrue(line2.getY() > line1a.getY());
 	}
 
 	@Test
@@ -370,7 +393,7 @@ public class DocxRendererTest {
 		assertEquals("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", line1.getText());
 
 		DrawStringAction line2 = actions.get(1);
-		assertEquals("BBBBBBBBBBBBB CCCCCCCCCCCCC", line2.getText());
+		assertEquals("BBBBBBBBBBBBB CCCCCCCCCCCCC ", line2.getText());
 		assertTrue(line2.getY() > line1.getY());
 
 		DrawStringAction line3 = actions.get(2);
@@ -775,7 +798,7 @@ public class DocxRendererTest {
 		DrawStringAction line1 = actions.get(0);
 		DrawStringAction line2 = actions.get(1);
 
-		assertEquals("This paragraph has a 3cm before and 6cm", line1.getText());
+		assertEquals("This paragraph has a 3cm before and 6cm ", line1.getText());
 		assertEquals("after indent. Some text will be on a new line.", line2.getText());
 
 		assertEquals(2835, line1.getX());

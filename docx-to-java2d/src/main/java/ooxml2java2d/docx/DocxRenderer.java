@@ -25,6 +25,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.StringTokenizer;
 
 import ooxml2java2d.GraphicsBuilder;
 import ooxml2java2d.Renderer;
@@ -273,7 +274,7 @@ public class DocxRenderer implements Renderer {
 
 				if (element.getDeclaredType().equals(Text.class)) {
 					if (element.getName().equals(QNAME_TEXT)) {
-						processText(((Text) element.getValue()).getValue(), column);
+						processText((Text) element.getValue(), column);
 					}
 				} else if (element.getDeclaredType().equals(Tab.class)) {
 					processTab((Tab) element.getValue(), column);
@@ -388,65 +389,61 @@ public class DocxRenderer implements Renderer {
 		}
 	}
 
-	private void processText(String text, Column column) {
-		Rectangle2D bounds = runStyle.getStringBoxSize(text);
+	private void processText(Text text, Column column) {
+		StringTokenizer st = new StringTokenizer(text.getValue(), " ", true);
+		StringBuilder sb = new StringBuilder();
 		Line line = column.getCurrentLine();
+		double width = 0;
+		double height = 0;
 
-		if (line.canFitContent(bounds.getWidth())) {
-			column.addContent(new StringContent((int) bounds.getWidth(), (int) bounds.getHeight(), text), paraStyle.getLineSpacing());
-		} else {
-			// Text needs wrapping, work out how to fit it into multiple lines
-			// TODO: optimize word-wrapping routine
-			String[] words = text.split(" ");
-			String newText = "";
+		while (st.hasMoreTokens()) {
+			String word = st.nextToken();
+			Rectangle2D bounds = runStyle.getStringBoxSize(word);
 
-			for (int i = 0; i < words.length; i++) {
-				if (newText.isEmpty()) {
-					bounds = runStyle.getStringBoxSize(words[i]);
-				} else {
-					bounds = runStyle.getStringBoxSize(newText + " " + words[i]);
-				}
+			if (line.canFitContent(width + bounds.getWidth())) {
+				sb.append(word);
+				width += bounds.getWidth();
+				height = Math.max(height, bounds.getHeight());
+			} else if (bounds.getWidth() > column.getWidth()) {
+				char[] chars = word.toCharArray();
 
-				// Check if adding the word will push it over the page content width
-				if (!line.canFitContent(bounds.getWidth())) {
-					// If this is the first word, break it up
-					if (i == 0) {
-						char[] chars = text.toCharArray();
+				for (int i = 0; i < chars.length; i++) {
+					bounds = runStyle.getStringBoxSize(String.valueOf(chars[i]));
 
-						for (int k = 0; k < chars.length; k++) {
-							bounds = runStyle.getStringBoxSize(newText + chars[k]);
-
-							if (line.canFitContent(bounds.getWidth())) {
-								newText += chars[k];
-							} else {
-								break;
-							}
-						}
+					if (line.canFitContent(width + bounds.getWidth())) {
+						sb.append(chars[i]);
+						width += bounds.getWidth();
+						height = Math.max(height, bounds.getHeight());
 					} else {
-						break;
+						column.addContent(new StringContent((int) width, (int) height, sb.toString()), 0);
+						column.addVerticalSpace(0);
+						line = column.getCurrentLine();
+						renderer.renderColumn(column);
+
+						sb = new StringBuilder(String.valueOf(chars[i]));
+						width = bounds.getWidth();
+						height = bounds.getHeight();
 					}
-				} else if (newText.isEmpty()) {
-					newText = words[i];
-				} else {
-					newText += " " + words[i];
 				}
-			}
-
-			bounds = runStyle.getStringBoxSize(newText);
-
-			String nextText = text.substring(newText.length()).trim();
-
-			// Make sure we don't end up in an infinite loop unable to output the content
-			if (nextText.equals(text)) {
-				LOG.error("Unable to fit content, skipping: " + nextText);
 			} else {
-				column.addContent(new StringContent((int) bounds.getWidth(), (int) bounds.getHeight(), newText), 0);
+				column.addContent(new StringContent((int) width, (int) height, sb.toString()), 0);
 				column.addVerticalSpace(0);
-
+				line = column.getCurrentLine();
 				renderer.renderColumn(column);
-				processText(nextText, column);
+
+				if (word.equals(" ")) {
+					sb = new StringBuilder();
+					width = 0;
+					height = 0;
+				} else {
+					sb = new StringBuilder(word);
+					width = bounds.getWidth();
+					height = bounds.getHeight();
+				}
 			}
 		}
+
+		column.addContent(new StringContent((int) width, (int) height, sb.toString()), 0);
 	}
 
 	private void processTab(Tab tab, Column column) {
