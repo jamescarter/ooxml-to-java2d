@@ -68,6 +68,7 @@ public class DocxRendererTest {
 	private static final File TEST_PARAGRAPH_BREAK = new File("src/test/resources/docx/paragraph_break.docx");
 	private static final File TEST_PARAGRAPH_SPACING = new File("src/test/resources/docx/paragraph_spacing.docx");
 	private static final File TEST_PARAGRAPH_INDENT = new File("src/test/resources/docx/paragraph_indent.docx");
+	private static final File TEST_SECTION_CONTINUOUS = new File("src/test/resources/docx/section_continuous.docx");
 	private static final File TEST_LIST_BULLET = new File("src/test/resources/docx/list_bullet.docx");
 	private static final File TEST_FILL_COLOR_TABLE = new File("src/test/resources/docx/fill_color_table.docx");
 	private MockGraphicsBuilder builder;
@@ -803,6 +804,13 @@ public class DocxRendererTest {
 
 		assertEquals(2835, line1.getX());
 		assertEquals(line1.getX(), line2.getX());
+	}
+
+	@Test
+	public void testSectionContinuous() throws IOException {
+		new DocxRenderer(TEST_SECTION_CONTINUOUS).render(builder);
+
+		assertEquals(1, builder.getPages().size());
 	}
 
 	/*

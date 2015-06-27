@@ -21,6 +21,7 @@ import org.apache.commons.lang.builder.ToStringStyle;
 import org.docx4j.model.structure.HeaderFooterPolicy;
 
 public class PageLayout {
+	private Type type;
 	private int width;
 	private int height;
 	private int topMargin;
@@ -31,10 +32,16 @@ public class PageLayout {
 	private int footerMargin;
 	private HeaderFooterPolicy headerFooterPolicy;
 
+	public enum Type {
+		CONTINUOUS,
+		NEXTPAGE
+	}
+
 	public PageLayout(
-		int width, int height, int topMargin, int rightMargin, int bottomMargin,
+		Type type, int width, int height, int topMargin, int rightMargin, int bottomMargin,
 		int leftMargin, int headerMargin, int footerMargin, HeaderFooterPolicy headerFooterPolicy
 	) {
+		this.type = type;
 		this.width = width;
 		this.height = height;
 		this.topMargin = topMargin;
@@ -44,6 +51,10 @@ public class PageLayout {
 		this.headerMargin = headerMargin;
 		this.footerMargin = footerMargin;
 		this.headerFooterPolicy = headerFooterPolicy;
+	}
+
+	public Type getType() {
+		return type;
 	}
 
 	public int getWidth() {
@@ -85,6 +96,7 @@ public class PageLayout {
 	@Override
 	public String toString() {
 		return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
+			.append("type", type)
 			.append("width", width)
 			.append("height", height)
 			.append("topMargin", topMargin)

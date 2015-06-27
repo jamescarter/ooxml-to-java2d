@@ -140,10 +140,13 @@ public class DocxRenderer implements Renderer {
 	@Override
 	public void render(GraphicsBuilder builder) {
 		this.renderer = new GraphicsRenderer(builder, initiation);
-		this.layouts = getPageLayouts(word);
+		this.layouts = getPageLayouts();
+		this.layout = layouts.removeFirst();
 
 		setDefaultStyles();
-		createPageFromNextLayout();
+
+		renderer.nextPage(layout.getWidth(), layout.getHeight());
+
 		iterateContentParts(main, new Column(layout.getLeftMargin(), layout.getWidth() - layout.getLeftMargin() - layout.getRightMargin()));
 	}
 
@@ -158,7 +161,7 @@ public class DocxRenderer implements Renderer {
 		}
 	}
 
-	private Deque<PageLayout> getPageLayouts(WordprocessingMLPackage word) {
+	private Deque<PageLayout> getPageLayouts() {
 		Deque<PageLayout> layouts = new ArrayDeque<>();
 
 		for (SectionWrapper sw : word.getDocumentModel().getSections()) {
@@ -172,8 +175,20 @@ public class DocxRenderer implements Renderer {
 		SectPr sectPr = sw.getSectPr();
 		PgSz size = sectPr.getPgSz();
 		PgMar margin = sectPr.getPgMar();
+		PageLayout.Type type = PageLayout.Type.NEXTPAGE;
+
+		if (sectPr.getType() != null) {
+			switch (sectPr.getType().getVal()) {
+				case "continuous":
+					type = PageLayout.Type.CONTINUOUS;
+				break;
+				default:
+					// default to next page
+			}
+		}
 
 		return new PageLayout(
+			type,
 			size.getW().intValue(),
 			size.getH().intValue(),
 			getValue(margin.getTop()),
@@ -184,11 +199,6 @@ public class DocxRenderer implements Renderer {
 			getValue(margin.getFooter()),
 			sw.getHeaderFooterPolicy()
 		);
-	}
-
-	private void createPageFromNextLayout() {
-		layout = layouts.removeFirst();
-		renderer.nextPage(layout.getWidth(), layout.getHeight());
 	}
 
 	private void initPage() {
@@ -343,9 +353,13 @@ public class DocxRenderer implements Renderer {
 		renderer.renderColumn(column);
 
 		if (properties != null && properties.getSectPr() != null) {
-			// The presence of SectPr indicates the next part should be started on a new page with a different layout
-			createPageFromNextLayout();
-			return true;
+			// The presence of SectPr indicates a change in layout. It may need to be applied at the next natural page break or explicitly cause a page break
+			layout = layouts.removeFirst();
+
+			if (layout.getType().equals(PageLayout.Type.NEXTPAGE)) {
+				renderer.nextPage(layout.getWidth(), layout.getHeight());
+				return true;
+			}
 		}
 
 		return false;
