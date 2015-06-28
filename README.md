@@ -16,12 +16,22 @@ renderer.render(new GraphicsBuilder() {
 });
 ```
 
-*Note:* A real `GraphicsBuilder` implementation (see examples below) will need to keep a reference to the `Graphics2D` object for later displaying, saving, etc
+*Note:* A real `GraphicsBuilder` implementation (see examples below) will need to keep a reference to the `Graphics2D` object for displaying to a screen, saving to disk, etc
 
 ## Examples
 * [DOCX to PDF](examples/docx-to-pdf)
 * [DOCX to SVG](examples/docx-to-image)
 * [DOCX to Bitmap Images](examples/docx-to-image)
+
+## Maven Dependency
+
+```xml
+<dependency>
+	<groupId>com.github.jamescarter.ooxml2java2d</groupId>
+	<artifactId>docx2java2d</artifactId>
+	<version>1.1.0</version>
+</dependency>
+````
 
 ## FAQ
 **Why is the output so huge?**
@@ -34,7 +44,7 @@ public class ScaledGraphicsBuilder implements GraphicsBuilder {
 	@Override
 	public Graphics2D nextPage(int pageWidth, int pageHeight) {
 		Graphics2D g2 = ...;
-		g2.scale(0.05, 0.05); // twips to actual size (72 DPI)
+		g2.scale(0.05, 0.05); // native twips to actual size (72 DPI)
 		return g2;t
 	}
 }
